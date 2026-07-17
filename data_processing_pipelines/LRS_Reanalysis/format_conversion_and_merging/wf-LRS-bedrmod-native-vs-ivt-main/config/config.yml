@@ -1,0 +1,112 @@
+# Illumina orthogonal validation set used to benchmark Nanopore predictions.
+ILLUMINA_VALIDATION:
+  bed: raw/Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed
+
+# Chromosomes to exclude at the sanitization step (e.g. chrY for female samples).
+SANITIZE:
+  drop_chroms:
+    - chrY
+
+# Directories used in workflow.
+ANALYSIS_DIR: "analysis"
+CONFIG_DIR: "config"
+SCRIPTS_DIR: "scripts"
+
+# Columns to plot distributions for (any column present in the BEDRMod header).
+PLOT_COLUMNS:
+  - coverage
+  - frequency
+  - n_mod
+  - score
+
+# Volcano plot settings.
+VOLCANO:
+  y_cap: 30   # clip -log10(padj) at this value; y-axis floor is padj=0.1 (y=1)
+
+# Score density plot settings.
+SCORE_DENSITY:
+  sig_padj: 0.05   # padj threshold for the "significant" group
+
+# Native vs IVT comparison pairs.
+NATIVE_VS_IVT:
+  header: [name, native_path, ivt_path, min_native_coverage, min_ivt_coverage]
+  data:
+    - [polyA,
+       raw/polyA_native_merged.filtered_nmod_empirical_score_processed.bed,
+       raw/polyA_ivt_merged.filtered_nmod_empirical_score_processed.bed,
+      30, 30]
+    - [rRNA,
+       raw/rRNA_native_merged.filtered_empirical_nmod_score_processed.bed,
+       raw/rRNA_ivt_merged.filtered_empricial_nmod_score_processed.bed,
+      30, 30]
+    - [tRNA,
+       raw/native_tRNA_combined_and_scored.bed,
+       raw/ivt_tRNA_combined_and_scored.bed,
+      30, 30]
+
+
+# Final site filters applied to the native_vs_ivt_fisher output.
+# Testable sites (padj != NA): padj <= max_padj AND
+#   log2(native_freq / ivt_freq) > min_log2fc AND
+#   native_freq > min_native_freq
+# IVT-absent sites (padj == NA): score > min_ivt_absent_score AND
+#   native_freq > min_native_freq
+# min_native_freq is in the same units as the frequency column (fraction 0-1).
+FINAL_FILTER:
+  polyA:
+    min_log2fc:           1.0
+    max_padj:             0.05
+    min_ivt_absent_score: 0.90
+    min_native_freq:      3     # 3 %
+  rRNA:
+    min_log2fc:           1.0
+    max_padj:             0.05
+    min_ivt_absent_score: 0.90
+    min_native_freq:      3
+  tRNA:
+    min_log2fc:           2.0
+    max_padj:             0.05
+    min_ivt_absent_score: 0.90
+    min_native_freq:      10
+
+# Nanopore cross-reactivity deduplication applied after FINAL_FILTER.
+# A site is removed if a higher-scored site exists within max_proximity nt
+# at a different coordinate on the same (chrom, strand).
+PROXIMITY_FILTER:
+  polyA:
+    max_proximity: 5
+  rRNA:
+    max_proximity: 5
+  tRNA:
+    max_proximity: 5
+
+
+MODIFICATION_COLORS:
+  # A - m6A family (deep crimson -> light blush)
+  m6A: "#721817"
+  Am: "#D44F3E"
+  m1A: "#A52020"
+  I: "#C41E1E"
+  "mA?": "#E8907A"
+  "m6,6A": "#F5C4B8"
+
+  # C - m5C family (near-black navy -> pale sky)
+  m5C: "#001427"
+  Cm: "#0D3B6E"
+  "mC?": "#1E6EB5"
+  ac4c: "#6AAED6"
+  reserved_C_3: "#B8D9F0"
+
+  # G - Inosine family (dark forest -> pale mint)
+
+  Gm: "#74B354"
+  "mG?": "#4A8532"
+  "m2,2,7G": "#A8D48A"
+  reserved_G_3: "#D4EEC4"
+
+  # U - Psi family (deep amber -> pale gold)
+  Y: "#F0A202"
+  Um: "#C47A02"
+  "mU?": "#F5BE45"
+  reserved_U_2: "#F9D47E"
+  reserved_U_3: "#FDE9B8"

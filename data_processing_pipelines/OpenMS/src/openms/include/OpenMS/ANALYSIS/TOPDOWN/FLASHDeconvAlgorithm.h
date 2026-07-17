@@ -1,0 +1,174 @@
+// Copyright (c) 2002-present, OpenMS Inc. -- EKU Tuebingen, ETH Zurich, and FU Berlin
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// --------------------------------------------------------------------------
+// $Maintainer: Kyowon Jeong, Jihyung Kim $
+// $Authors: Kyowon Jeong, Jihyung Kim $
+// --------------------------------------------------------------------------
+
+#pragma once
+
+#include <OpenMS/ANALYSIS/TOPDOWN/DeconvolvedSpectrum.h>
+#include <OpenMS/ANALYSIS/TOPDOWN/FLASHHelperClasses.h>
+#include <OpenMS/ANALYSIS/TOPDOWN/PeakGroup.h>
+#include <OpenMS/ANALYSIS/TOPDOWN/SpectralDeconvolution.h>
+#include <OpenMS/DATASTRUCTURES/DefaultParamHandler.h>
+#include <OpenMS/DATASTRUCTURES/Matrix.h>
+#include <OpenMS/KERNEL/MSExperiment.h>
+#include <OpenMS/KERNEL/MSSpectrum.h>
+#include <boost/dynamic_bitset.hpp>
+#include <iostream>
+
+namespace OpenMS
+{
+  /**
+  @brief FLASHDeconv algorithm: ultrafast mass deconvolution algorithm for top down mass spectrometry dataset
+  From MSSpectrum, this class outputs DeconvolvedSpectrum.
+  Deconvolution takes three steps:
+   i) decharging and select candidate masses - speed up via binning
+   ii) collecting isotopes from the candidate masses and deisotoping - peak groups are defined here
+   iii) scoring and filter out low scoring masses (i.e., peak groups)
+  @ingroup Topdown
+*/
+
+  class OPENMS_DLLAPI FLASHDeconvAlgorithm : public DefaultParamHandler, public ProgressLogger
+  {
+  public:
+    /// default constructor
+    FLASHDeconvAlgorithm();
+
+    /// copy constructor
+    FLASHDeconvAlgorithm(const FLASHDeconvAlgorithm&) = default;
+
+    /// move constructor
+    FLASHDeconvAlgorithm(FLASHDeconvAlgorithm&& other)  noexcept = default;
+
+    /// assignment operator
+    FLASHDeconvAlgorithm& operator=(const FLASHDeconvAlgorithm& fd) = default;
+
+    /// move assignment operator
+    FLASHDeconvAlgorithm& operator=(FLASHDeconvAlgorithm&& fd) = default;
+
+    /// destructor
+    ~FLASHDeconvAlgorithm() override = default;
+
+    std::vector<double> getTolerances() const;
+
+    /**
+     * @brief Run FLASHDeconv algorithm for @p map and store @p deconvolved_spectra and @p deconvolved_feature
+     * @param[in] map the dataset
+     * @param[out] deconvolved_spectra the deconvolved spectra will be stored in here
+     * @param[in] deconvolved_feature the deconvolved features wll be strored in here
+     */
+    void run(MSExperiment& map, std::vector<DeconvolvedSpectrum>& deconvolved_spectra, std::vector<FLASHHelperClasses::MassFeature>& deconvolved_feature);
+
+    /// get calculated averagine. Call after calculateAveragine is called.
+    const FLASHHelperClasses::PrecalculatedAveragine& getAveragine();
+
+    /// get calculated decoy averagine. Call after calculateAveragine is called.
+    const FLASHHelperClasses::PrecalculatedAveragine& getDecoyAveragine();
+
+    /// get noise decoy weight
+    double getNoiseDecoyWeight() const
+    {
+      return noise_decoy_weight_;
+    }
+    /// get scan number of the spectrum in @p index -th in @p map
+    static int getScanNumber(const MSExperiment& map, Size index);
+
+  protected:
+    void updateMembers_() override;
+
+  private:
+    /// SpectralDeconvolution  instances for spectral deconvolution for target and decoys
+    SpectralDeconvolution sd_, sd_noise_decoy_, sd_signal_decoy_;
+
+    /// to merge spectra.
+    int merge_spec_ = 0;
+
+    /// forced MS level
+    int forced_ms_level_ = 0;
+
+    /// maximum MS level, which is 4.
+    UInt max_ms_level_ = 4;
+
+    /// current maximum MS level - i.e., for MS2, this is the precursor charge
+    UInt current_max_ms_level_ = 0;
+
+    /// current minimum MS level.
+    UInt current_min_ms_level_ = 0;
+
+    /// the number of preceding full scans from which MS2 precursor mass will be searched.
+    int precursor_MS1_window_ = 0;
+
+    /// FLASHIda log file name
+    String ida_log_file_;
+
+    /// mass tolerances, and minimum cosine scores per MS level
+    DoubleList tols_, min_cos_;
+
+    /// to use RNA averagine model
+    bool use_RNA_averagine_ = false;
+
+    /// should decoy deconvolution be done?
+    bool report_decoy_ = false;
+
+    /// default precursor isolation window size.
+    double isolation_window_size_{3.0};
+
+    /// noise decoy weight determined with qvalue calcualtion.
+    double noise_decoy_weight_ = 1;
+    /// FLASHIda parsing information is stored here: MS1 scan - information
+    std::map<int, std::vector<std::vector<float>>> precursor_map_for_ida_;
+    /// a map from native ID to precursor peak group
+    std::map<String, PeakGroup> native_id_precursor_peak_group_map_;
+
+    /// read dataset to update ms level information
+    void updateMSLevels_(MSExperiment& map);
+
+    /// merge spectra
+    void mergeSpectra_(MSExperiment& map, uint ms_level);
+
+    /// run spectral deconvolution
+    void runSpectralDeconvolution_(MSExperiment& map, std::vector<DeconvolvedSpectrum>& deconvolved_spectra);
+
+    /// find precursor scan number when peak group is not found
+    int findPrecursorScanNumber_(const MSExperiment& map, Size index, uint ms_level) const;
+
+    /// append decoy peak groups to deconvolved spectrum
+    void appendDecoyPeakGroups_(DeconvolvedSpectrum& deconvolved_spectrum, const MSSpectrum& spec, int scan_number, const PeakGroup& precursor_pg);
+
+    /// run feature finding to get deconvolved features
+    void runFeatureFinding_(std::vector<DeconvolvedSpectrum>& deconvolved_spectra, std::vector<FLASHHelperClasses::MassFeature>& deconvolved_features);
+
+    /// with found deconvolved features, update QScores for masses that are contained in features.
+    static void updatePrecursorQScores_(std::vector<DeconvolvedSpectrum>& deconvolved_spectra, int ms_level);
+
+    /// find precursor peak groups from FLASHIda log file
+    void findPrecursorPeakGroupsFormIdaLog_(const MSExperiment& map, Size index, double start_mz, double end_mz);
+
+    /// register the precursor peak group (or mass) if possible for MSn (n>1) spectrum.
+    void findPrecursorPeakGroupsForMSnSpectra_(const MSExperiment& map, const std::vector<DeconvolvedSpectrum>& deconvolved_spectra, uint ms_level);
+
+    /// find scan number bounds for precursor search
+    std::pair<int, int> findScanNumberBounds_(const MSExperiment& map, Size index, uint ms_level) const;
+
+    /// collect survey scans within the given scan number bounds
+    std::vector<DeconvolvedSpectrum> collectSurveyScans_(const std::vector<DeconvolvedSpectrum>& deconvolved_spectra, int b_scan_number, int a_scan_number, uint ms_level) const;
+
+    /// get isolation window m/z range from precursors
+    std::pair<double, double> getIsolationWindowMzRange_(const MSSpectrum& spec) const;
+
+    /// find the best precursor peak group from survey scans within the isolation window
+    PeakGroup findBestPrecursorPeakGroup_(const std::vector<DeconvolvedSpectrum>& survey_scans, double start_mz, double end_mz) const;
+
+    /// determine tolerance
+    void determineTolerance_(const MSExperiment& map, const Param& sd_param, const FLASHHelperClasses::PrecalculatedAveragine& avg, uint ms_level);
+
+    /// get histogram
+    static std::vector<int> getHistogram_(const std::vector<double>& data, double min_range, double max_range, double bin_size);
+
+    /// filter low intensity peaks
+    static void filterLowPeaks_(MSExperiment& map);
+  };
+} // namespace OpenMS

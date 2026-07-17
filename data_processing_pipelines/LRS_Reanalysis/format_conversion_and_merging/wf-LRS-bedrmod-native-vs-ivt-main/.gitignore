@@ -1,0 +1,11 @@
+.snakemake
+/slurm*
+analysis
+data
+downloads
+logs
+trash
+work
+singularity_cache
+raw
+backup

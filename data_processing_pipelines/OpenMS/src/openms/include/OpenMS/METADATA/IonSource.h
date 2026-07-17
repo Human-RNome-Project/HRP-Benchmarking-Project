@@ -1,0 +1,283 @@
+// Copyright (c) 2002-present, OpenMS Inc. -- EKU Tuebingen, ETH Zurich, and FU Berlin
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// --------------------------------------------------------------------------
+// $Maintainer: Timo Sachsenberg $
+// $Authors: Marc Sturm $
+// --------------------------------------------------------------------------
+
+#pragma once
+
+#include <OpenMS/METADATA/MetaInfoInterface.h>
+#include <OpenMS/DATASTRUCTURES/ListUtils.h>
+#include <OpenMS/CONCEPT/HashUtils.h>
+
+#include <functional>
+
+namespace OpenMS
+{
+
+  /**
+      @brief Description of an ion source (part of a MS Instrument)
+
+      @ingroup Metadata
+  */
+  class OPENMS_DLLAPI IonSource :
+    public MetaInfoInterface
+  {
+public:
+    /// inlet type
+    enum class InletType
+    {
+      INLETNULL,                           ///< Unknown
+      DIRECT,                              ///< Direct
+      BATCH,                               ///< Batch (e.g. in MALDI)
+      CHROMATOGRAPHY,                      ///< Chromatography (liquid)
+      PARTICLEBEAM,                        ///< Particle beam
+      MEMBRANESEPARATOR,                   ///< Membrane separator
+      OPENSPLIT,                           ///< Open split
+      JETSEPARATOR,                        ///< Jet separator
+      SEPTUM,                              ///< Septum
+      RESERVOIR,                           ///< Reservoir
+      MOVINGBELT,                          ///< Moving belt
+      MOVINGWIRE,                          ///< Moving wire
+      FLOWINJECTIONANALYSIS,               ///< Flow injection analysis
+      ELECTROSPRAYINLET,                   ///< Electro spray
+      THERMOSPRAYINLET,                    ///< Thermo spray
+      INFUSION,                            ///< Infusion
+      CONTINUOUSFLOWFASTATOMBOMBARDMENT,   ///< Continuous flow fast atom bombardment
+      INDUCTIVELYCOUPLEDPLASMA,            ///< Inductively coupled plasma
+      MEMBRANE,                            ///< Membrane inlet
+      NANOSPRAY,                           ///< Nanospray inlet
+      SIZE_OF_INLETTYPE
+    };
+    /// Names of inlet types
+    static const std::string NamesOfInletType[static_cast<size_t>(InletType::SIZE_OF_INLETTYPE)];
+
+    /// ionization method
+    enum class IonizationMethod
+    {
+      IONMETHODNULL,           ///< Unknown
+      ESI,                     ///< electrospray ionisation
+      EI,                      ///< electron ionization
+      CI,                      ///< chemical ionisation
+      FAB,                     ///< fast atom bombardment
+      TSP,                     ///< thermospray
+      LD,                      ///< laser desorption
+      FD,                      ///< field desorption
+      FI,                      ///< flame ionization
+      PD,                      ///< plasma desorption
+      SI,                      ///< secondary ion MS
+      TI,                      ///< thermal ionization
+      API,                     ///< atmospheric pressure ionisation
+      ISI,                     ///<
+      CID,                     ///< collision induced decomposition
+      CAD,                     ///< collision activated decomposition
+      HN,                      ///<
+      APCI,                    ///< atmospheric pressure chemical ionization
+      APPI,                    ///< atmospheric pressure photo ionization
+      ICP,                     ///< inductively coupled plasma
+      NESI,                    ///< Nano electrospray ionization
+      MESI,                    ///< Micro electrospray ionization
+      SELDI,                   ///< Surface enhanced laser desorption ionization
+      SEND,                    ///< Surface enhanced neat desorption
+      FIB,                     ///< Fast ion bombardment
+      MALDI,                   ///< Matrix-assisted laser desorption ionization
+      MPI,                     ///< Multiphoton ionization
+      DI,                      ///< desorption ionization
+      FA,                      ///< flowing afterglow
+      FII,                     ///< field ionization
+      GD_MS,                   ///< glow discharge ionization
+      NICI,                    ///< negative ion chemical ionization
+      NRMS,                    ///< neutralization reionization mass spectrometry
+      PI,                      ///< photoionization
+      PYMS,                    ///< pyrolysis mass spectrometry
+      REMPI,                   ///< resonance enhanced multiphoton ionization
+      AI,                      ///< adiabatic ionization
+      ASI,                     ///< associative ionization
+      AD,                      ///< autodetachment
+      AUI,                     ///< autoionization
+      CEI,                     ///< charge exchange ionization
+      CHEMI,                   ///< chemi-ionization
+      DISSI,                   ///< dissociative ionization
+      LSI,                     ///< liquid secondary ionization
+      PEI,                     ///< penning ionization
+      SOI,                     ///< soft ionization
+      SPI,                     ///< spark ionization
+      SUI,                     ///< surface ionization
+      VI,                      ///< vertical ionization
+      AP_MALDI,                ///< atmospheric pressure matrix-assisted laser desorption ionization
+      SILI,                    ///< desorption/ionization on silicon
+      SALDI,                   ///< surface-assisted laser desorption ionization
+      SIZE_OF_IONIZATIONMETHOD
+    };
+    /// Names of ionization methods
+    static const std::string NamesOfIonizationMethod[static_cast<size_t>(IonizationMethod::SIZE_OF_IONIZATIONMETHOD)];
+
+    /// Polarity of the ion source
+    enum class Polarity
+    {
+      POLNULL,          ///< Unknown
+      POSITIVE,         ///< Positive polarity
+      NEGATIVE,         ///< Negative polarity
+      SIZE_OF_POLARITY
+    };
+    /// Names of polarity of the ion source
+    static const std::string NamesOfPolarity[static_cast<size_t>(Polarity::SIZE_OF_POLARITY)];
+
+    /**
+     @brief Returns all inlet type names known to OpenMS
+     
+     @note For performance-critical code that repeatedly accesses these names,
+     cache the returned list to avoid repeated allocations.
+    */
+    static StringList getAllNamesOfInletType();
+    /**
+     @brief Returns all ionization method names known to OpenMS
+     
+     @note For performance-critical code that repeatedly accesses these names,
+     cache the returned list to avoid repeated allocations.
+    */
+    static StringList getAllNamesOfIonizationMethod();
+    /**
+     @brief Returns all polarity names known to OpenMS
+
+     @note For performance-critical code that repeatedly accesses these names,
+     cache the returned list to avoid repeated allocations.
+    */
+    static StringList getAllNamesOfPolarity();
+
+    /**
+     @brief Convert an InletType enum to its string representation
+
+     @param type The inlet type enum value to convert
+     @return Reference to the string representation
+     @throws Exception::InvalidValue if @p type is SIZE_OF_INLETTYPE
+    */
+    static const std::string& inletTypeToString(InletType type);
+
+    /**
+     @brief Convert a string to an InletType enum
+
+     @param name The string name to convert
+     @return The corresponding InletType enum value
+     @throws Exception::InvalidValue if @p name is not found in NamesOfInletType[]
+    */
+    static InletType toInletType(const std::string& name);
+
+    /**
+     @brief Convert an IonizationMethod enum to its string representation
+
+     @param method The ionization method enum value to convert
+     @return Reference to the string representation
+     @throws Exception::InvalidValue if @p method is SIZE_OF_IONIZATIONMETHOD
+    */
+    static const std::string& ionizationMethodToString(IonizationMethod method);
+
+    /**
+     @brief Convert a string to an IonizationMethod enum
+
+     @param name The string name to convert
+     @return The corresponding IonizationMethod enum value
+     @throws Exception::InvalidValue if @p name is not found in NamesOfIonizationMethod[]
+    */
+    static IonizationMethod toIonizationMethod(const std::string& name);
+
+    /**
+     @brief Convert a Polarity enum to its string representation
+
+     @param polarity The polarity enum value to convert
+     @return Reference to the string representation
+     @throws Exception::InvalidValue if @p polarity is SIZE_OF_POLARITY
+    */
+    static const std::string& polarityToString(Polarity polarity);
+
+    /**
+     @brief Convert a string to a Polarity enum
+
+     @param name The string name to convert
+     @return The corresponding Polarity enum value
+     @throws Exception::InvalidValue if @p name is not found in NamesOfPolarity[]
+    */
+    static Polarity toPolarity(const std::string& name);
+
+    /// Constructor
+    IonSource();
+    /// Copy constructor
+    IonSource(const IonSource &) = default;
+    /// Move constructor
+    IonSource(IonSource&&) = default;
+    /// Destructor
+    ~IonSource();
+
+    /// Assignment operator
+    IonSource & operator=(const IonSource &) = default;
+    /// Move assignment operator
+    IonSource& operator=(IonSource&&) & = default;
+
+    /// Equality operator
+    bool operator==(const IonSource & rhs) const;
+    /// Equality operator
+    bool operator!=(const IonSource & rhs) const;
+
+    /// returns the inlet type
+    InletType getInletType() const;
+    /// sets the  inlet type
+    void setInletType(InletType inlet_type);
+
+    /// returns the ionization method
+    IonizationMethod getIonizationMethod() const;
+    /// sets the ionization method
+    void setIonizationMethod(IonizationMethod ionization_type);
+
+    /// returns the ionization mode
+    Polarity getPolarity() const;
+    /// sets the ionization mode
+    void setPolarity(Polarity polarity);
+
+    /**
+        @brief returns the position of this part in the whole Instrument.
+
+        Order can be ignored, as long the instrument has this default setup:
+        - one ion source
+        - one or many mass analyzers
+        - one ion detector
+
+        For more complex instruments, the order should be defined.
+    */
+    Int getOrder() const;
+    /// sets the order
+    void setOrder(Int order);
+
+protected:
+    InletType inlet_type_;
+    IonizationMethod ionization_method_;
+    Polarity polarity_;
+    Int order_;
+
+  };
+
+} // namespace OpenMS
+
+// Hash function specialization for IonSource
+namespace std
+{
+  template<>
+  struct hash<OpenMS::IonSource>
+  {
+    std::size_t operator()(const OpenMS::IonSource& is) const noexcept
+    {
+      // Hash all fields used in operator==: order_, inlet_type_, ionization_method_, polarity_, and MetaInfoInterface
+      std::size_t seed = OpenMS::hash_int(is.getOrder());
+      OpenMS::hash_combine(seed, OpenMS::hash_int(static_cast<int>(is.getInletType())));
+      OpenMS::hash_combine(seed, OpenMS::hash_int(static_cast<int>(is.getIonizationMethod())));
+      OpenMS::hash_combine(seed, OpenMS::hash_int(static_cast<int>(is.getPolarity())));
+
+      // Hash MetaInfoInterface base class (handles both UInt and String keys)
+      OpenMS::hash_combine(seed, std::hash<OpenMS::MetaInfoInterface>{}(is));
+
+      return seed;
+    }
+  };
+}
+

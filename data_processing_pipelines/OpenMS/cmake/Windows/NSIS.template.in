@@ -1,0 +1,739 @@
+############################################
+## see README before running this script! ##
+############################################
+## useful resources:
+# http://abarinoff-dev.blogspot.com/2010/04/passing-parameters-and-retrieving.html
+# http://nsis.sourceforge.net/Inetc_plug-in
+
+###################
+### CPACK config ##
+###################
+Name "@CPACK_PACKAGE_NAME@"
+BrandingText "@CPACK_PACKAGE_FILE_NAME@"
+OutFile "@CPACK_TOPLEVEL_DIRECTORY@/@CPACK_OUTPUT_FILE_NAME@"
+SetCompressor /SOLID lzma
+
+!define INST_DIR "@CPACK_TEMPORARY_DIRECTORY@"
+## Long version has to have 4 levels...
+!define VERSION_LONG "@CPACK_PACKAGE_VERSION@.0"
+
+##################
+###   config   ###
+##################
+### let Cfg_Settings.nsh.in be configured by CMake. Then include:
+!include ..\..\..\Cfg_Settings.nsh
+### NSISRESOURCES now consists of the cmake/Windows directory of the source tree.
+!addplugindir ${NSISRESOURCES}\Plugins\x86-unicode
+!addincludedir ${NSISRESOURCES}\Include
+
+# set to "0" for deployment!!! use "1" to build the installer fast (for script debugging)
+!define DEBUG_BUILD 0
+!define DEBUG_NO_THIRDPARTY 0
+# set to "0" for deployment!!! use "1" to skip packaging of *.html files (takes ages)
+!define DEBUG_SKIP_DOCU 0
+
+##################
+###   SCRIPT   ###
+##################
+
+# which extensions to connect to TOPPView and TOPPAS
+!macro OpenMSGUIExtensions _action
+  !insertmacro ${_action} ".mzData" "TOPPView"
+  !insertmacro ${_action} ".mzXML" "TOPPView"
+  !insertmacro ${_action} ".mzML" "TOPPView"
+  !insertmacro ${_action} ".sqMass" "TOPPView"
+  !insertmacro ${_action} ".dta" "TOPPView"
+  !insertmacro ${_action} ".dta2D" "TOPPView"
+  !insertmacro ${_action} ".cdf" "TOPPView"
+  !insertmacro ${_action} ".idXML" "TOPPView"
+  !insertmacro ${_action} ".featureXML" "TOPPView"
+  !insertmacro ${_action} ".consensusXML" "TOPPView"
+  !insertmacro ${_action} ".toppas" "TOPPAS"
+!macroend
+
+# Defines
+!define APPNAME "OpenMS"
+!define PRODUCT_NAME "${APPNAME}"
+# For the icon used by MultiUser plugin, relative to INSTDIR
+!define PROGEXE "bin\TOPPView.exe"
+# For our own additional regkeys
+!define REGKEY "SOFTWARE\$(^Name)"
+# For AdvUninstallLog (matches default of MultiUser)
+!define PRODUCT_UNINST_ROOT SHCTX
+# For AdvUninstallLog (matches default of MultiUser)
+!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+!define COMPANY "OpenMS Developer Team"
+# For MultiUser
+!define COMPANY_NAME "${COMPANY}"
+!define URL "https://www.OpenMS.de"
+# For MultiUser
+!define URL_INFO_ABOUT "${URL}"
+
+# We could also define the following
+#CONTACT
+#URL_HELP_LINK
+    
+
+# MultiUser defines
+!define MULTIUSER_INSTALLMODE_INSTDIR "${PRODUCT_NAME}-${VERSION}" # Otherwise it would just be PRODUCT_NAME
+!define MULTIUSER_INSTALLMODE_DEFAULT_ALLUSERS 1 # Default to Alluser install even when not an admin
+!define MULTIUSER_INSTALLMODE_64_BIT 1
+!define MULTIUSER_INSTALLMODE_NO_HELP_DIALOG 1 # We define our own with additional params later
+
+# Included files
+
+# MUI2 somehow crashes with NSIS3.0 release/stable. Switched to MuiEx (belongs to UltraMui) that seems better supported and has legacy option.
+#!include MUI2.nsh
+!include MUIEx.nsh
+!include Sections.nsh
+!include Library.nsh
+!include FileFunc.nsh
+
+!define FOLDERLIST_EXE ${NSISRESOURCES}\FolderList.exe
+
+# Private includes from repo
+!include IncludeScript_Misc.nsh
+!include IncludeScript_FileLogging.nsh
+!include EnvVarUpdate.nsh
+!include AdvUninstLog2.nsh
+!include NsisMultiUser.nsh
+
+# For AdvUninstalllog (alternative INTERACTIVE_UNINSTALL will trigger message boxes for each file)
+!insertmacro UNATTENDED_UNINSTALL
+
+# Reserved Files
+!insertmacro MUI_RESERVEFILE_LANGDLL
+
+# Modify the next line to adapt to the plugin for other NSIS versions (currently 3.0 release)
+# e.g. NSIS 2.x does not have the subfolders x86-unicode or x86-ansi, so remove them.
+ReserveFile "${NSISDIR}\Plugins\x86-unicode\advsplash.dll"
+
+;--------------------------------
+;Interface Configuration
+
+!define MUI_HEADERIMAGE
+!define MUI_HEADERIMAGE_BITMAP "${NSISRESOURCES}\images\header.bmp" ; optional
+!define MUI_HEADERIMAGE_UNBITMAP "${NSISRESOURCES}\images\header-uninstall.bmp" ; optional
+!define MUI_HEADERIMAGE_RIGHT
+!define MUI_ABORTWARNING
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${NSISRESOURCES}\images\wizard.bmp" ; optional
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "${NSISRESOURCES}\images\wizard-uninstall.bmp" ; optional
+
+!insertmacro RefreshShellIcons
+!insertmacro un.RefreshShellIcons
+!insertmacro DirState
+!insertmacro GetFileName
+
+# (global) Variables to be set and used during our script
+Var StartMenuGroup
+Var EnvVarUpdateLoc
+
+# MUI defines
+#!define MUI_ICON OpenMS.ico
+
+# UI settings
+!define MUI_FINISHPAGE_NOAUTOCLOSE
+!define UMUI_STARTMENUPAGE_REGISTRY_ROOT SHCTX
+!define UMUI_STARTMENUPAGE_REGISTRY_KEY ${PRODUCT_UNINST_KEY}
+!define UMUI_STARTMENUPAGE_REGISTRY_VALUENAME StartMenuGroup
+!define UMUI_STARTMENUPAGE_DEFAULTFOLDER "${PRODUCT_NAME}"
+!define MUI_LICENSEPAGE_RADIOBUTTONS
+!define MUI_FINISHPAGE_SHOWREADME $INSTDIR\ReleaseNotes.txt
+!define MUI_UNFINISHPAGE_NOAUTOCLOSE
+
+# Remember the installer language
+!define UMUI_LANGUAGE_REGISTRY_ROOT SHCTX
+!define UMUI_LANGUAGE_REGISTRY_KEY ${PRODUCT_UNINST_KEY}
+!define UMUI_LANGUAGE_REGISTRY_VALUENAME "InstallerLanguage"
+
+
+# Installer pages
+!insertmacro MUI_PAGE_WELCOME
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW licpageshow
+!insertmacro MUI_PAGE_LICENSE ${OPENMSDIRSRC}\License.txt
+!insertmacro MULTIUSER_PAGE_INSTALLMODE
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_COMPONENTS
+!insertmacro MUI_PAGE_STARTMENU Application $StartMenuGroup
+!insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_PAGE_FINISH
+
+# Uninstaller pages
+!insertmacro MUI_UNPAGE_CONFIRM
+!define MULTIUSER_INSTALLMODE_CHANGE_MODE_FUNCTION un.PageInstallModeChangeMode
+!insertmacro MULTIUSER_UNPAGE_INSTALLMODE
+!insertmacro MUI_UNPAGE_INSTFILES
+
+# Installer languages
+!insertmacro MUI_LANGUAGE German
+!insertmacro MUI_LANGUAGE English
+!insertmacro MUI_LANGUAGE French
+!insertmacro MULTIUSER_LANGUAGE_INIT
+
+# Installer Language Strings
+LangString ^UninstallLink ${LANG_GERMAN} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_ENGLISH} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_FRENCH} "Uninstall $(^Name)"
+
+# Custom MUI Function to set font of license display page
+# to a mono spaced one.
+# from http://stackoverflow.com/questions/8424172/nsis-display-license-with-a-monospace-font
+Function licpageshow
+    FindWindow $0 "#32770" "" $HWNDPARENT
+    CreateFont $1 "Consolas" "8"
+    GetDlgItem $0 $0 1000
+    SendMessage $0 ${WM_SETFONT} $1 1
+FunctionEnd
+
+
+# predefined installation modes
+InstType "Recommended"  #1
+InstType "Minimum"      #2
+InstType "Full"         #3
+
+# TODO check what this does
+CRCCheck on
+ShowInstDetails hide
+VIProductVersion ${VERSION_LONG}
+VIAddVersionKey /LANG=${LANG_GERMAN} ProductName "${PRODUCT_NAME}"
+VIAddVersionKey /LANG=${LANG_GERMAN} ProductVersion "${VERSION}"
+VIAddVersionKey /LANG=${LANG_GERMAN} CompanyName "${COMPANY}"
+VIAddVersionKey /LANG=${LANG_GERMAN} CompanyWebsite "${URL}"
+VIAddVersionKey /LANG=${LANG_GERMAN} FileVersion "${VERSION}"
+VIAddVersionKey /LANG=${LANG_GERMAN} FileDescription ""
+VIAddVersionKey /LANG=${LANG_GERMAN} LegalCopyright ""
+
+ShowUninstDetails hide
+
+; HKLM (all users) vs HKCU (current user) defines
+!define env_hklm 'HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"'
+!define env_hkcu 'HKCU "Environment"'
+
+!macro CREATE_SMGROUP_SHORTCUT NAME PATH
+    Push "${NAME}"
+    Push "${PATH}"
+    Call CreateSMGroupShortcut
+!macroend
+
+Function CreateSMGroupShortcut
+    Exch $R0 ;PATH
+    Exch
+    Exch $R1 ;NAME
+    Push $R2
+    StrCpy $R2 $StartMenuGroup 1
+    StrCmp $R2 ">" no_smgroup
+    SetOutPath $SMPROGRAMS\$StartMenuGroup
+    StrCpy $OUTDIR "$INSTDIR"       # execute link target in $OUTDIR
+
+    CreateDirectory "$SMPROGRAMS\${APPNAME}"
+    CreateShortcut "$SMPROGRAMS\${APPNAME}\$R1.lnk" $R0
+
+    no_smgroup:
+        Pop $R2
+        Pop $R1
+        Pop $R0
+FunctionEnd
+
+
+# Installer sections
+Section "OpenMS Library" SEC_Lib
+    SectionIn 1 2 3 RO
+
+    SetOutPath $INSTDIR\bin
+    SetOverwrite on
+
+    # open log file
+    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
+
+    # install files for bin dir
+    File "${OPENMSLIBDIR}\*.dll"
+    File "${OPENMSLIBDIR}\*.lib"
+
+    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
+
+    SetOutPath $INSTDIR\bin\plugins
+    SetOverwrite on
+
+    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
+    File /r "${OPENMSPLUGINDIR}\*.*"
+    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
+
+    # share dir
+    SetOutPath $INSTDIR\share\OpenMS
+    SetOverwrite on
+
+    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
+
+    !if ${DEBUG_BUILD} == 0
+        File /r /x "THIRDPARTY" /x "doc" "${OPENMSSHAREDIR}\*.*"
+    !endif
+
+    # icon for *files* associated with TOPPView
+    File "${NSISRESOURCES}\OpenMS_TOPPView.ico"
+    File "${NSISRESOURCES}\OpenMS_TOPPAS.ico"
+
+    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
+SectionEnd
+
+Section "TOPP tools" SEC_TOPP
+    SectionIn 1 2 3 RO
+
+    SetOutPath $INSTDIR\bin
+    SetOverwrite on
+
+    #open uninstall log file
+    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
+
+    # Since Qt 5.14 we do not need qt.conf if the plugins are in the standard location "plugins"
+    # Qt is built "-relocatable" since then.
+    #File "${OPENMSBINDIR}\qt.conf"
+
+    # install every tool exe except for Tutorials (if present)
+    # skip in installer debug mode
+    !if ${DEBUG_BUILD} == 0
+        File /x "Tutorial_*.exe" "${OPENMSBINDIR}\*.exe"
+    !endif
+
+    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
+SectionEnd
+
+
+Section "Documentation" SEC_Doc
+    SectionIn 3
+
+    SetOverwrite on
+    SetOutPath $INSTDIR\share\doc\html
+
+    # open uninstall log file
+    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
+
+    # html docs
+    !if ${DEBUG_SKIP_DOCU} == 0
+
+      File /r "${OPENMSDOCDIR}\html\*.*"
+      #SetOutPath $INSTDIR\share\doc
+    !endif
+
+    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
+SectionEnd
+
+## Third party libs
+## TODO switch to packagedir
+SectionGroup "ThirdParty" SEC_ThirdParty
+    !if ${DEBUG_NO_THIRDPARTY} == 0
+        Section "Proteowizard" SEC_pwiz
+            SectionIn 1 3
+            SetOverwrite on
+            CreateDirectory "$INSTDIR\share\OpenMS\THIRDPARTY\pwiz-bin"
+            SetOutPath "$INSTDIR\share\OpenMS\THIRDPARTY\pwiz-bin"
+            !insertmacro UNINSTALL.LOG_OPEN_INSTALL
+
+            File /r "${THIRDPARTYDIR}\pwiz-bin\*.*"
+
+            !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
+        SectionEnd
+
+        ## Install every other directory in the given (flattened) THIRDPARTY folder.
+        !tempfile filelist
+        !system 'FOR /D %A IN ("${THIRDPARTYDIR}\*") DO @( IF NOT "%~nA" == "pwiz-bin" ((echo Section "%~nA" & echo SectionIn 1 3 & echo !insertmacro UNINSTALL.LOG_OPEN_INSTALL & echo SetOverwrite on & echo CreateDirectory "$INSTDIR\share\OpenMS\THIRDPARTY\%~nA" & echo SetOutPath "$INSTDIR\share\OpenMS\THIRDPARTY\%~nA" & echo File /r "%~A\*.*" & echo Var /GLOBAL %~nAInstalled & echo StrCpy $%~nAInstalled "1" & echo !insertmacro UNINSTALL.LOG_CLOSE_INSTALL & echo SectionEnd) >> "${filelist}"))'
+        !include "${filelist}"
+        !delfile "${filelist}"
+    !endif
+
+SectionGroupEnd
+
+Section "-License" SEC_License
+    SectionIn 1 2 3
+    SetOutPath $INSTDIR
+    SetOverwrite on
+    #open uninstall log file
+    !insertmacro UNINSTALL.LOG_OPEN_INSTALL
+
+    File  "${NSISRESOURCES}\ReleaseNotes.txt"
+
+    !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
+SectionEnd
+
+Function CreateShortcuts
+    !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
+
+    ## warning: create shortcuts only AFTER installing files, OR renew SetOutPath
+    ## otherwise all files will be installed to the default install directory
+    !insertmacro CREATE_SMGROUP_SHORTCUT "OpenMS Documentation (html)" $INSTDIR\share\doc\html\index.html
+
+    !insertmacro CREATE_SMGROUP_SHORTCUT TOPPView $INSTDIR\bin\TOPPView.exe
+    !insertmacro CREATE_SMGROUP_SHORTCUT TOPPAS $INSTDIR\bin\TOPPAS.exe
+    !insertmacro CREATE_SMGROUP_SHORTCUT SwathWizard $INSTDIR\bin\SwathWizard.exe
+    !insertmacro CREATE_SMGROUP_SHORTCUT INIFileEditor $INSTDIR\bin\INIFileEditor.exe
+    !insertmacro CREATE_SMGROUP_SHORTCUT "OpenMS Homepage" "${URL}"
+    !insertmacro CREATE_SMGROUP_SHORTCUT "TOPP command line" "$INSTDIR\bin\command.bat"
+
+    SetOutPath $SMPROGRAMS\${APPNAME}
+    CreateShortcut "$SMPROGRAMS\${APPNAME}\$(^UninstallLink).lnk" $INSTDIR\uninstall.exe
+    !insertmacro MUI_STARTMENU_WRITE_END
+
+FunctionEnd
+
+
+Section "-Create_StartMenu" SEC_StartMenuCreate
+    #GetFunctionAddress $0 CreateShortcuts
+    #UAC::ExecCodeSegment $0
+    !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
+
+    ## warning: create shortcuts only AFTER installing files, OR renew SetOutPath
+    ## otherwise all files will be installed to the default install directory
+    !insertmacro CREATE_SMGROUP_SHORTCUT "OpenMS Documentation (html)" $INSTDIR\share\doc\html\index.html
+
+    !insertmacro CREATE_SMGROUP_SHORTCUT TOPPView $INSTDIR\bin\TOPPView.exe
+    !insertmacro CREATE_SMGROUP_SHORTCUT TOPPAS $INSTDIR\bin\TOPPAS.exe
+    !insertmacro CREATE_SMGROUP_SHORTCUT SwathWizard $INSTDIR\bin\SwathWizard.exe
+    !insertmacro CREATE_SMGROUP_SHORTCUT INIFileEditor $INSTDIR\bin\INIFileEditor.exe
+    !insertmacro CREATE_SMGROUP_SHORTCUT "OpenMS Homepage" http://www.OpenMS.de/
+    !insertmacro CREATE_SMGROUP_SHORTCUT "TOPP command line" "$INSTDIR\bin\command.bat"
+
+    SetOutPath $SMPROGRAMS\${APPNAME}
+    CreateShortcut "$SMPROGRAMS\${APPNAME}\$(^UninstallLink).lnk" $INSTDIR\uninstall.exe
+    !insertmacro MUI_STARTMENU_WRITE_END
+SectionEnd
+
+Section "-Create_command_bat" SEC_CmdBat
+    SectionIn 1 2 3
+    #open log file
+    # Does not work for FileWrite somehow: !insertmacro UNINSTALL.LOG_OPEN_INSTALL
+
+    ## create a command bat (i.e. a TOPP shell)
+    push $R0
+    push $0
+    StrCpy $R0 $INSTDIR 2
+    fileOpen $0 "$INSTDIR\bin\command.bat" w
+    fileWrite $0 "$SYSDIR\cmd.exe /k $\"$R0 && cd $INSTDIR\bin && cls && echo on && echo Welcome to the OpenMS TOPP tools command line && echo type 'dir *.exe' to see available commands && echo on $\""
+    fileClose $0
+    pop $0
+    pop $R0
+
+    # Does not work. Maybe needs to be done later? For now we delete manually in "-Uninstall" section
+    # FileWrite $UninstallLog "$INSTDIR\bin\command.bat$\r$\n"
+
+    # Does not work for FileWrite somehow: !insertmacro UNINSTALL.LOG_CLOSE_INSTALL
+SectionEnd
+
+
+Section "-PathInst" SEC_PathRegister
+    SectionIn 1 2 3
+    # no logging required, as we do not install files in this section
+    ## HINT: do not forget to also add/modify the un.EnvVarUpdate in the uninstall section!
+
+    ${If} $MultiUser.InstallMode == "AllUsers"
+        StrCpy $EnvVarUpdateLoc "HKLM"
+    ${Else}
+        StrCpy $EnvVarUpdateLoc "HKCU"
+    ${EndIf}
+
+    # OpenMS binary path
+    ${EnvVarUpdate} $0 "PATH" "A" "$EnvVarUpdateLoc" "$INSTDIR\bin"
+    IfErrors 0 +2
+      MessageBox MB_OK "Unable to add '$INSTDIR\bin' to PATH environment. Add manually if required. See 'details' for details."
+
+    # Add all folders of all INSTALLED Third Party libraries to PATH that adapters find them
+    FindFirst $0 $1 $INSTDIR\share\OpenMS\THIRDPARTY\*.*
+    loop:
+      StrCmp $1 "" done
+      StrCmp $1 "." skip
+      StrCmp $1 ".." skip
+      IfFileExists "$INSTDIR\share\OpenMS\THIRDPARTY\$1\*.*" IsDir skip
+      IsDir:
+        ${EnvVarUpdate} $3 "PATH" "A" "$EnvVarUpdateLoc" "$INSTDIR\share\OpenMS\THIRDPARTY\$1"
+        IfErrors 0 +2
+          MessageBox MB_OK "Unable to add '$1' to PATH environment. Add manually if required. See 'details' for details."
+      skip:
+        FindNext $0 $1
+        Goto loop
+    done:
+      FindClose $0
+
+    # Create OPENMS_DATA_PATH environment variable (for shared xml files etc)
+
+    # Set variable
+    ${If} $MultiUser.InstallMode == "AllUsers"
+        WriteRegExpandStr ${env_hklm} "OPENMS_DATA_PATH" "$INSTDIR\share\OpenMS"
+    ${Else}
+        WriteRegExpandStr ${env_hkcu} "OPENMS_DATA_PATH" "$INSTDIR\share\OpenMS"
+    ${EndIf}
+
+    # Make sure windows knows about the change
+    SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+
+SectionEnd
+
+SectionGroup "Register File Extensions" SEC_RegisterExt
+    # no logging required, as we do not install files in this section
+
+    # windows registry info: http://support.microsoft.com/kb/256986
+    !insertmacro OpenMSGUIExtensions RegisterExtensionSection
+
+    Section "-RegFileRefreshInternal" SEC_RegFileRefreshInternal
+        SectionIn 1 2 3
+        ${RefreshShellIcons}
+    SectionEnd
+
+SectionGroupEnd
+
+## This is done by NsisMultiUser plugin now
+Section -post SEC0008
+     SetOutPath $INSTDIR
+     # Write uninstaller and registry uninstall info as the last step:
+     # - Cons: user does not have the option to run the uninstaller if sth. goes wrong
+     # - Pros: we can use the uninstall logger plugin that avoids boilerplate code
+
+     # defined by NsisMultiUser plugin. default uninstall.exe.
+     WriteUninstaller "${UNINSTALL_FILENAME}"
+     # add registry keys like the ones below
+     !insertmacro MULTIUSER_RegistryAddInstallInfo
+
+#    WriteRegStr SHCTX "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" DisplayName "$(^Name)"
+#    WriteRegStr SHCTX "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" DisplayVersion "${VERSION}"
+#    WriteRegStr SHCTX "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" Publisher "OpenMS Developer Team"
+#    WriteRegStr SHCTX "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" URLInfoAbout "${URL}"
+#    WriteRegStr SHCTX "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" DisplayIcon $INSTDIR\uninstall.exe
+#    WriteRegStr SHCTX "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" UninstallString $INSTDIR\uninstall.exe
+#    WriteRegDWORD SHCTX "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" NoModify 1
+#    WriteRegDWORD SHCTX "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)" NoRepair 1
+SectionEnd
+
+# hidden section, write install size as the final step
+Section "-Write Install Size"
+    !insertmacro MULTIUSER_RegistryAddInstallSizeInfo
+SectionEnd
+
+Function parseParameters
+    ClearErrors
+
+    ; /nothirdparty
+    ${GetOptions} $cmdLineParams '/nothirdparty' $R0
+    IfErrors parsedParams 0
+      !insertmacro ClearSectionFlag ${SEC_ThirdParty} ${SF_SELECTED}
+
+    parsedParams:
+
+FunctionEnd
+
+# Installer functions
+Function .onInit
+
+    ## now our own code:
+    !insertmacro MULTIUSER_INIT
+    !insertmacro UNINSTALL.LOG_PREPARE_INSTALL
+
+    # Command line options for silent install (with "/S")
+
+    # Get parameters
+    Var /GLOBAL cmdLineParams
+    Push $R0
+    ${GetParameters} $cmdLineParams
+
+    # /? param (help)
+    ClearErrors
+    ${GetOptions} $cmdLineParams '/?' $R0
+    ${ifnot} ${errors}
+        MessageBox MB_ICONINFORMATION "Usage:$\r$\n\
+            $\r$\n\
+            /allusers$\t- (un)install for all users, case-insensitive$\r$\n\
+            /currentuser$\t- (un)install for current user only, case-insensitive$\r$\n\
+            /uninstall$\t- (installer only) run uninstaller, requires /allusers or /currentuser, case-insensitive$\r$\n\
+            /nothirdparty$\t- does not install thirdparty tools, case-sensitive$\r$\n\
+            /S$\t- silent mode, requires /allusers or /currentuser, case-sensitive$\r$\n\
+            /D$\t- (installer only) set install directory, must be last parameter, without quotes, case-sensitive$\r$\n\
+            /?$\t- display this message$\r$\n\
+            $\r$\n\
+            $\r$\n\
+            Return codes (decimal):$\r$\n\
+            $\r$\n\
+            0$\t- normal execution (no error)$\r$\n\
+            1$\t- (un)installation aborted by user (Cancel button)$\r$\n\
+            2$\t- (un)installation aborted by script$\r$\n\
+            666660$\t- invalid command-line parameters$\r$\n\
+            666661$\t- elevation is not allowed by defines$\r$\n\
+            666662$\t- uninstaller detected there's no installed version$\r$\n\
+            666663$\t- executing uninstaller from the installer failed$\r$\n\
+            666666$\t- cannot start elevated instance$\r$\n\
+            other$\t- Windows error code when trying to start elevated instance"
+        SetErrorLevel 0
+        Quit
+    ${endif}
+
+    Pop $R0
+
+    # Initialise options
+
+    # Parse Parameters
+    Push $R0
+    Call parseParameters
+    Pop $R0
+
+    # show splash screen
+    InitPluginsDir
+    Push $R1
+    File /oname=$PLUGINSDIR\spltmp.bmp "${NSISRESOURCES}\images\OpenMS_splash.bmp"
+    advsplash::show 1000 600 400 -1 $PLUGINSDIR\spltmp
+    Pop $R1
+    Pop $R1
+
+    ## deny starting of x64 installer on an x86 system (will not run)
+    !if ${PLATFORM} == 64
+    ${If} ${RunningX64}
+    ${else}
+      MessageBox mb_iconstop "You are running a 32bit operating system. The executables of this setup are 64bit, and thus cannot be run after installation. Use a 64bit OS (there is no 32bit installer for OpenMS anymore)."
+      Abort
+    ${EndIf}
+    !endif
+
+    # check for previous versions
+    # on install we did:     WriteRegStr SHCTX "${REGKEY}" "Path" "$INSTDIR"
+    ReadRegStr $R0 SHCTX "${REGKEY}" "Path"
+    StrCmp $R0 "" virgin_install
+
+    ## store, if the old-installer is present ($R8 should be empty then)
+    ReadRegStr $R8 SHCTX "${REGKEY}" "UninstallString"
+
+    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+    "OpenMS has already been installed. $\nThe old version will be removed automatically. \
+     Please close all OpenMS applications before continuing!" \
+    IDCANCEL  quit_installer
+
+    ;Run the uninstaller
+    ClearErrors
+    ExecWait '$R0\uninstall.exe _?=$R0' ;; Do not execute the copy of uninstaller (ExecWait won´t work)
+    Delete "$R0\uninstall.exe"          # delete installer manually
+
+    push $R9
+    ${DirState} "$R0" $R9
+    StrCmp $R9 1 0 virgin_install
+    pop $R9
+
+    # look for the very first (and buggy) version of the installer
+    StrCmp $R8 "" 0 new_installer
+      # we found the old installer:
+      ## delete the licenses, share other stuff
+      RmDir /REBOOTOK "$R0\GUI"
+      RmDir /REBOOTOK /r "$R0\share"
+      Delete /REBOOTOK "$R0\*.txt"
+      ## correct Path settings (they were not properly reset)
+      ${EnvVarUpdate} $0 "PATH" "R" "HKLM" "$R0\lib"
+      ${EnvVarUpdate} $0 "PATH" "R" "HKLM" "$R0\TOPP"
+      ; delete variable
+      DeleteRegValue ${env_hklm} "OPENMS_DATA_PATH"
+      ; make sure windows knows about the change
+      SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+
+    new_installer:
+    ## check that all *.dll´s and *.exe files are gone (userfiles are ok)! otherwise force reboot
+    !insertmacro REBOOT_ON_INCOMPLETE_DELETION $R0
+
+    virgin_install:
+    !insertmacro MUI_LANGDLL_DISPLAY
+    return
+
+    quit_installer:
+    quit
+
+FunctionEnd
+
+Function .onInstFailed
+   #UAC::Unload ;Must call unload!
+FunctionEnd
+
+Function .onInstSuccess
+   !insertmacro UNINSTALL.LOG_UPDATE_INSTALL
+FunctionEnd
+
+# set the component descriptions after the Sections have been defined!
+!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_Lib} "The core libraries of OpenMS"
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_TOPP} "TOPP (The OpenMS PiPeline) - chainable tools for data analysis"
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_Doc} "Documentation/Tutorials for TOPP, TOPPView and the OpenMS library itself."
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_ThirdParty} "Install third party libraries (e.g., ProteoWizard)."
+!insertmacro MUI_DESCRIPTION_TEXT ${SEC_RegisterExt} "Register certain file types (e.g., '.mzML') with TOPPView.exe."
+!insertmacro MUI_FUNCTION_DESCRIPTION_END
+
+################
+## UNINSTALL ###
+################
+
+# Uninstaller sections
+
+Section "-Uninstall"
+    !insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuGroup
+    !insertmacro MUI_UNGETLANGUAGE
+
+    ## undo changes to PATH
+    ${If} $MultiUser.InstallMode == "AllUsers"
+        StrCpy $EnvVarUpdateLoc "HKLM"
+    ${Else}
+        StrCpy $EnvVarUpdateLoc "HKCU"
+    ${EndIf}
+
+    # OpenMS binary path
+    ${un.EnvVarUpdate} $0 "PATH" "R" "$EnvVarUpdateLoc" "$INSTDIR\bin"
+
+    # Third Party library paths
+    FindFirst $0 $1 $INSTDIR\share\OpenMS\THIRDPARTY\*.*
+    loopun:
+      StrCmp $1 "" doneun
+      StrCmp $1 "." skipun
+      StrCmp $1 ".." skipun
+      IfFileExists "$INSTDIR\share\OpenMS\THIRDPARTY\$1\*.*" IsDirun skipun
+      IsDirun:
+        ${un.EnvVarUpdate} $3 "PATH" "R" "$EnvVarUpdateLoc" "$INSTDIR\share\OpenMS\THIRDPARTY\$1"
+        IfErrors 0 +2
+          MessageBox MB_OK "Unable to remove '$1' from PATH environment. Remove manually if required. See 'details' for details."
+      skipun:
+        FindNext $0 $1
+        Goto loopun
+    doneun:
+      FindClose $0
+
+    ## remove OPENMS_DATA_PATH
+    ${If} $MultiUser.InstallMode == "AllUsers"
+        DeleteRegValue ${env_hklm} "OPENMS_DATA_PATH"
+    ${Else}
+        DeleteRegValue ${env_hkcu} "OPENMS_DATA_PATH"
+    ${EndIf}
+
+    # remove extension-links to TOPPView
+    !insertmacro OpenMSGUIExtensions UnRegisterExtensionSection
+    ${un.RefreshShellIcons}
+
+    ## delete all installed files
+    !insertmacro UNINSTALL.NEW_UNINSTALL
+
+    # remove directories which are now empty (in case some were forgotten)
+    Push "$INSTDIR"
+    Call un.RemoveEmptyDirs
+
+    ## clean up the registry (should be done by the NsisMultiUser plugin)
+    #DeleteRegKey SHCTX "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$(^Name)"
+    # delete /Software/OpenMS (with all its content)
+    DeleteRegKey SHCTX "${REGKEY}"
+    # somehow our generated bat file is not recorded by AdvUninstallLog
+    Delete "$INSTDIR\bin\command.bat"
+    # Remove the uninstaller from registry as the very last step - if sth. goes wrong, let the user run it again
+    !insertmacro MULTIUSER_RegistryRemoveInstallInfo
+
+    RmDir /REBOOTOK $INSTDIR
+
+    ## delete start menu entries ($SMPROGRAMS depends on the ShellContext)
+    RmDir /r /REBOOTOK $SMPROGRAMS\${APPNAME}
+
+SectionEnd
+
+# UnInstaller functions
+Function un.onInit
+    !insertmacro MULTIUSER_UNINIT
+    !insertmacro MUI_UNGETLANGUAGE ; we always get the language, since the outer and inner instance might have different language
+FunctionEnd
+
+Function un.PageInstallModeChangeMode
+    !insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuGroup
+FunctionEnd
+
+
