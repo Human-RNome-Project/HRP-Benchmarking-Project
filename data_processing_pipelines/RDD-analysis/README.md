@@ -1,0 +1,144 @@
+# Error Rate and RDD Panel Plotting
+
+This directory contains the plotting scripts and documentation for reproducing Panels B, C, D, E, F, and G of the supplementary Error Rate and RDD figure (`RDD_0707-1.pdf`). 
+
+## Directory Structure
+- `scripts/panels/`: Contains the plotting scripts that generate the panels.
+- `scripts/generation/`: Upstream scripts that generate the data required by the panels.
+- `inputs/`: Intended directory for the required input data files (not tracked in Git due to size).
+- `figures/`: Output directory where the generated plots will be saved.
+
+## Environment Setup
+
+To run the panel scripts, you will need a Python environment with the required dependencies (`pandas`, `numpy`, `matplotlib`, `scipy`). We have provided both an `environment.yml` file for Conda users and a `requirements.txt` file for pip users.
+
+### Option A: Using Conda (Recommended)
+1. Ensure you have Conda (or Miniconda/Mamba) installed.
+2. Create the environment by running:
+   ```bash
+   conda env create -f environment.yml
+   ```
+3. Activate the environment:
+   ```bash
+   conda activate hrp_panels
+   ```
+
+### Option B: Using Pip
+1. Create and activate a standard virtual environment:
+   ```bash
+   python3 -m venv hrp_env
+   source hrp_env/bin/activate
+   ```
+2. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Data Download Instructions
+
+> **[TODO: Add specific instructions here on how to download the `inputs/` folder data from the remote controlled-access server, including any required credentials or `wget`/`curl` commands.]**
+
+## Panels and Required Inputs
+
+The scripts in `scripts/panels/` require various data files generated from the upstream pipeline. Because these files are large, they are not included in the repository. Please ensure the required files are downloaded into the `inputs/` folder before running the scripts.
+
+### Panel B: Per-Read Total Error Rate (Separated)
+**Script:** `scripts/panels/panel_b_per_read_error.py`
+**Output:** `figures/panel_b_per_read_error.png` (and `.pdf`)
+**Required Inputs:**
+- `*_per_read_error_rates.tsv` (for all native and IVT samples)
+
+### Panel C: Coverage Mismatch Error Rate Combined
+**Script:** `scripts/panels/panel_c_coverage_mismatch.py`
+**Output:** `figures/panel_c_coverage_mismatch.png` (and `.pdf`)
+**Required Inputs:**
+- `*_coverage_error_rate.tsv` (from coverage_error_rate_out directory)
+
+### Panel D: Substitution Error Rate
+**Script:** `scripts/panels/panel_d_substitution_error.py`
+**Output:** `figures/panel_d_substitution_error.png` (and `.pdf`)
+**Required Inputs:**
+- `no_chrY_sub_summary.tsv`
+
+### Panel E: Per-Site Error Rate by Modification
+**Script:** `scripts/panels/panel_e_per_site_error.py`
+**Output:** `figures/panel_e_per_site_error.png` (and `.pdf`)
+**Required Inputs:**
+- `*_modkit_stratified_rates.tsv` (for all native samples)
+
+### Panel F: Substitution Spectrum
+**Script:** `scripts/panels/panel_f_substitution_spectrum.py`
+**Output:** `figures/panel_f_substitution_spectrum.png` (and `.pdf`)
+**Required Inputs:**
+- `*_substitution_spectrum.tsv` (for native samples)
+
+### Panel G: RDD Sites vs Threshold
+**Script:** `scripts/panels/panel_g_rdd_sites.py`
+**Output:** `figures/panel_g_rdd_sites.png` (and `.pdf`)
+**Required Inputs:**
+- `genomewide_matrix.json`
+- `genomewide_permod.json`
+- `genomewide_rdd.json`
+
+---
+
+*Note: The scripts were adapted to use the local `inputs` and `figures` directory relative to the repository root. All scripts will automatically generate outputs into the `figures/` directory.*
+
+## Upstream Data Generation
+
+The input files needed by the panel scripts are generated upstream from aligned BAM files or intermediate pileups. The scripts responsible for this generation have been included in `scripts/generation/`.
+
+### 1. Per-Read Error Rates
+**Script:** `scripts/generation/calculate_read_error_rates_parallel.py`
+
+Parses BAM alignments and calculates the total error rate per read (required for Panel B).
+
+**Parameters:**
+- `--mode`: Select `chrom` (process a single BAM/chromosome) or `merge` (aggregate chromosome results).
+- *In `chrom` mode:*
+  - `--bam`: Path to the indexed BAM file.
+  - `--chrom`: Chromosome to process (e.g., `chr1`).
+- *In `merge` mode:*
+  - `--per-read-tsvs`: List of TSV files generated from `chrom` mode.
+  - `--npz-files`: List of `.npz` files generated from `chrom` mode.
+
+### 2. Per-Position Mismatch and Modkit Rates
+**Script:** `scripts/generation/calculate_native_mismatch_rates_memeff_fast.py`
+
+Takes `pysamstats` output and generates the `*_per_position_mismatch.tsv`, `*_mismatch_rate_summary.tsv`, and `*_modkit_stratified_rates.tsv` files required for Panels D and F. 
+
+**Parameters:**
+- `--mode`: Select `chrom` (process a single pysamstats file) or `merge` (aggregate).
+- *In `chrom` mode:*
+  - `--pysamstats`: Path to the per-chromosome pysamstats TSV output (can be gzipped).
+  - `--masks-dir`: Directory containing `analysis_regions.bed`, `variants.bed`, and `junctions.bed` for site masking.
+  - `--chrom`: Chromosome being processed (e.g., `chr1`).
+- *In `merge` mode:*
+  - `--per-pos-files`, `--rates-files`, `--summary-files`: Lists of intermediate files from `chrom` mode to be aggregated.
+  - `--sample-name`: Base name for the final merged output files.
+
+### 3. Calculate Coverage Error Rate
+**Script:** `scripts/generation/calculate_coverage_error_rate.py`
+
+Calculates per-position error rates binned by coverage depth directly from `pysamstats` TSVs (required for Panel C).
+
+**Parameters:**
+- `--pysamstats` (Required): Path to the `pysamstats --type variation` TSV output.
+- `--giab-bed`: Path to GIAB high-confidence BED for position filtering (optional).
+- `--chroms`: Comma-separated list of chromosomes to analyse (default: all autosomes + chrX).
+- `--outdir`: Directory to save the output files (default: `results/coverage_error`).
+- `--sample-label`: Label for the sample in the output TSV (default: `sample`).
+- `--n-deciles`: Number of depth deciles to bin the output into (default: 20).
+
+### 4. Genome-wide RDD Analysis (Alternative)
+**Script:** `scripts/generation/rdd_genomewide.py`
+
+Generates the JSON summary files (`genomewide_matrix.json`, `genomewide_permod.json`, `genomewide_rdd.json`) used to generate alternative RDD panels, including Panel G, from ONT per-position pileups.
+
+**Parameters (Positional):**
+- `MODE`: Must be one of `matrix`, `rdd`, or `permod`.
+  - `matrix` or `rdd`: Provide the mode followed by a list of `*variation_tsv.gz` pileups.
+  - `permod`: Provide `permod`, followed by a `BEDRMOD.bed` file, followed by the pileups.
+- *Internal Constants (edit within script):*
+  - `MINCOV`: Minimum coverage (default: 20).
+  - `SNV_VAF`: Variant Allele Frequency threshold to exclude SNVs (default: 0.35).
