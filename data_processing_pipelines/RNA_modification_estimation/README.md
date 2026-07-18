@@ -1,6 +1,6 @@
-# Error Rate and RDD Panel Plotting
+# Error Rate and RNA Modification Estimation Panel Plotting
 
-This directory contains the plotting scripts and documentation for reproducing Panels B, C, D, E, F, and G of the supplementary Error Rate and RDD figure (`RDD_0707-1.pdf`). 
+This directory contains the plotting scripts and documentation for reproducing Panels B, C, D, E, F, and G of the RNA modification estimation section (`Figure 13`). 
 
 ## Directory Structure
 - `scripts/panels/`: Contains the plotting scripts that generate the panels.

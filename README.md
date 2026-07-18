@@ -41,7 +41,7 @@ The code for these pipelines resides in `data_processing_pipelines/`.
 
 * **Long-Read Sequencing (LRS):** 
   * [`data_processing_pipelines/LRS_Reanalysis/`](data_processing_pipelines/LRS_Reanalysis/): Contains WDL Pipelines (polyA, rRNA, tRNA) that generate per-base modkit calls. Also contains the Format Conversion & Merging Python helper scripts converting modkit outputs into standardized `bedrmod` files.
-  * [`data_processing_pipelines/RDD-analysis/`](data_processing_pipelines/RDD-analysis/): Long-Read Native Error Rate Computation Pipeline. Computes genomic mismatch rates and RDD sites from BAMs. Outputs feed directly into all error rate panels (Fig 13).
+  * [`data_processing_pipelines/RNA_modification_estimation/`](data_processing_pipelines/RNA_modification_estimation/): Long-Read Native Error Rate Computation Pipeline. Computes genomic mismatch rates and RNA modification estimation sites from BAMs. Outputs feed directly into all error rate panels (Fig 13).
 
 * **Short-Read Sequencing (SRS):** 
   * The raw data is processed through short-read sequencing analysis pipelines to generate SRS platform-specific BED files. (Note: The original raw pipelines have been archived; only the final generated BED files are used downstream).
@@ -61,13 +61,20 @@ We merge the results from all three methods to create a "Consensus" reference se
 #### Phase 3: Creating the Figures
 Once the data is analyzed and the consensus is built, we use short scripts to draw the actual figures for the paper. All of these drawing scripts are neatly organized by figure number in the `figure_generation/` folder.
 
-* **[`figure_generation/figure_03/`](figure_generation/figure_03/) (Figure 3: Mass Spectrometry Absolute Quantification Plots):** `figure3a-f.py` generates panels A-F (absolute quantification plots). `figure_3g.py` generates panel G.
-* **[`figure_generation/figure_06/`](figure_generation/figure_06/) (Figure 6: Mass Spectrometry rRNA Modification Maps):** `figure_6a.py` plots the 18S rRNA MS map. `figure_6b.py` plots the 28S map. `figure_6c.py` plots the tRNA MS heatmap.
-* **[`figure_generation/figure_09/`](figure_generation/figure_09/) (Figure 9: Long-Read Sequence Motifs and Metagene Distributions):** `Motif_Fig_9B.py` generates sequence motif logos. `MetagenePlot_Fig9_C.R` generates metagene distribution plots.
-* **[`figure_generation/figure_10/`](figure_generation/figure_10/) (Figure 10: Short-Read Sequencing rRNA Modification Maps):** `figure10b.py` and `figure10c.py` generate the rRNA and tRNA Illumina maps. Includes 1D lollipop helper modules (`plot_18.py`, etc.).
-* **[`figure_generation/figure_11/`](figure_generation/figure_11/) (Figure 11: Short-Read Sequencing Integrated Metagene Plots):** Contains R scripts (e.g., `3.0_integrated_metagene.R`) that generate integrated metagene density plots for the modification data.
-* **[`figure_generation/figure_12_consensus/`](figure_generation/figure_12_consensus/) (Figure 12: Multi-Technology Consensus Panels):** Generates panels for Figure 12 detailing the Consensus Draft. Includes scripts plotting genome-wide Manhattan density of modifications, zoomed chromosomal regions, metagene distributions, and Peptidyl Transferase Center (PTC) mapping. Also includes `figure12i.py` which renders the structural modification map for consensus tRNAs using standard Sprinzl coordinates.
-* **[`figure_generation/figure_13_rdd/`](figure_generation/figure_13_rdd/) (Figure 13: Sequencing Error Rates and RDDs):** Generates panels for Figure 13 detailing error rate benchmarking. Includes scripts plotting per-read error distributions, coverage vs mismatch rate, substitution error profiles, per-site error metrics, and RNA-DNA Differences (RDD) thresholds.
+* **Figure 1:** Timeline of events leading to the first draft of the human RNome sequence. (No associated code)
+* **Figure 2:** Species of modified ribonucleosides in total RNA and biotypes. (No associated code)
+* **[`figure_generation/figure_03/`](figure_generation/figure_03/) (Figure 3: Quantification in different RNA biotypes):** `figure3a-f.py` generates panels A-F (absolute quantification plots). `figure_3g.py` generates panel G.
+* **Figure 4:** Overall workflow for MS-seq. (No associated code)
+* **Figure 5:** MS-seq sequence coverage for 18S, 28S rRNA and 47 tRNA isoacceptors. (No associated code)
+* **[`figure_generation/figure_06/`](figure_generation/figure_06/) (Figure 6: MS-seq modification maps for 18S and 28S rRNA and 47 tRNA isoacceptors):** `figure_6a.py` plots the 18S rRNA MS map. `figure_6b.py` plots the 28S map. `figure_6c.py` plots the tRNA MS heatmap.
+* **Figure 7:** Ribosomal location of RNA modifications detected by MS-seq. (No associated code)
+* **[`figure_generation/figure_08/`](figure_generation/figure_08/) (Figure 8: RNome Analysis using Long-read Native RNA Sequencing):** `biotype_analysis.py` generates Figure 8F.
+* **[`figure_generation/figure_09/`](figure_generation/figure_09/) (Figure 9: RNA Modification Analysis using Long-read Native RNA Sequencing):** `Motif_Fig_9B.py` generates sequence motif logos. `MetagenePlot_Fig9_C.R` generates metagene distribution plots. `modification_type_composition.py` generates Figure 9D.
+* **[`figure_generation/figure_10/`](figure_generation/figure_10/) (Figure 10: SRS. RNA modifications detected by short-read sequencing in GM12878 rRNAs and tRNAs):** `figure10b.py` and `figure10c.py` generate the rRNA and tRNA Illumina maps. Includes 1D lollipop helper modules (`plot_18.py`, etc.).
+* **[`figure_generation/figure_11/`](figure_generation/figure_11/) (Figure 11: RNA modifications detected by SRS in GM12878 polyadenylated RNA (polyA-mRNAs)):** Contains R scripts (e.g., `3.0_integrated_metagene.R`) that generate integrated metagene density plots for the modification data.
+* **[`figure_generation/figure_12_consensus/`](figure_generation/figure_12_consensus/) (Figure 12: The draft RNome sequence of the human B-cell line GM12878):** Generates panels for Figure 12 detailing the Consensus Draft. Includes scripts plotting genome-wide Manhattan density of modifications, zoomed chromosomal regions, metagene distributions, and Peptidyl Transferase Center (PTC) mapping. Also includes `figure12i.py` which renders the structural modification map for consensus tRNAs using standard Sprinzl coordinates.
+* **[`figure_generation/figure_13_RNA_modification_estimation/`](figure_generation/figure_13_RNA_modification_estimation/) (Figure 13: RNA–DNA sequence differences in ONT direct RNA sequencing of GM12878):** Generates panels for Figure 13 detailing error rate benchmarking. Includes scripts plotting per-read error distributions, coverage vs mismatch rate, substitution error profiles, per-site error metrics, and RNA-DNA Differences (RDD) thresholds.
+* **Figure 14**. Visualizing the first draft of the Human RNome Sequence. (No associated code)
 
 ---
 
