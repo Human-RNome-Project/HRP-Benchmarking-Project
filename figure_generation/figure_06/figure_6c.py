@@ -606,8 +606,6 @@ df_cons = transform_tRNA_name(df_cons)
 
 df_cons = switch_names(df_cons)
 
-df_unique = df_cons.drop_duplicates(subset=["chrom","name", "chromStart"])
-
 tRNAs = df_cons["chrom"].unique().tolist()
 
 # Load sprinzl Excel file

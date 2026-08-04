@@ -1,5 +1,7 @@
 #%%
+from pathlib import Path
 import pandas as pd
+import argparse
 
 from helper_functions import load_bedrmod, filter_bedfile_massspec, filter_consensus
 from merging_functions import merge_positions_in_sample, create_consensus
@@ -69,46 +71,83 @@ def run_consensus_creation(samples:list,out_file:str,min_samples: int = 1, q_sco
         final_consensus.to_csv(f, sep="\t",header=False,index=False,lineterminator="\n")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Build a consensus bedrmod file from multiple sample bedrmod files.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
 
-####################################################################################################
-#running example 
-#rRNA
-samples_names = ["HRP_C_001_rRNA_001","HRP_C_002_rRNA_001",
-              "HRP_C_005_rRNA_004+HRP_C_006_rRNA_004","HRP_C_014_rRNA_001"]
+    parser.add_argument(
+        "--input-folder",
+        required=True,
+        help="Folder containing OpenMS fragment-sample files; all .bed and .bedrmod files in it are used as samples.",
+    )
 
-base = "" #fill in your datas strorage folder
-end = ".bed"
+    parser.add_argument("--out-file", required=True, help="Path to output consensus bedrmod file.")
+    parser.add_argument("--min-samples", type=int, default=1, help="Minimum samples covering a modification site required for accepting it in consensus.")
+    parser.add_argument("--q-score", type=float, default=0.05, help="Score/q-value threshold used for filtering.")
+    parser.add_argument("--freq", type=float, default=10, help="Frequency threshold used for filtering.")
+    parser.add_argument("--min-overlap", type=int, default=100, help="Minimum overlap percentage for final filtering. (Percentage of samples that must have a modification at a specific site for it to be included in the consensus.)")
 
-samples=[]
-for n in samples_names:
-    samples.append(base+n+end)
+    mapping_group = parser.add_mutually_exclusive_group()
+    mapping_group.add_argument(
+        "--unique-mapping",
+        dest="unique_mapping",
+        action="store_true",
+        help="Require unique mapping during filtering (default).",
+    )
+    mapping_group.add_argument(
+        "--no-unique-mapping",
+        dest="unique_mapping",
+        action="store_false",
+        help="Do not require unique mapping during filtering.",
+    )
+    parser.set_defaults(unique_mapping=True)
 
-out_file = "test_consensus.bed"
-min_samples = 1
-q_score = 0.05
-frequency = 10
+    parser.add_argument(
+        "--tRNA",
+        action="store_true",
+        default=False,
+        help="Treat samples as tRNA data (applies remove_base_ends).",
+    )
 
-min_overlap = 100
-unique_mapping = True
+    return parser.parse_args()
 
-run_consensus_creation(samples,out_file,min_samples,q_score,frequency,min_overlap,unique_mapping)
+def find_sample_files(input_folder: str) -> list:
+    """Return sorted paths of all .bed and .bedrmod files directly inside input_folder."""
+    folder = Path(input_folder)
+    if not folder.is_dir():
+        raise NotADirectoryError(f"Input folder not found: {input_folder}")
 
-#tRNA
-samples_names =["HRP_C_001_tRNA_003","HRP_C_008_tRNA_004","HRP_C_015_tRNA"]
+    files = sorted(
+        str(p) for p in folder.iterdir()
+        if p.is_file() and p.suffix.lower() in (".bed", ".bedrmod")
+    )
 
-base = "" #fill in your datas strorage folder
-end =  ".bed"
-samples=[]
-for n in samples_names:
-    samples.append(base+n+end)
+    if not files:
+        raise FileNotFoundError(f"No .bed or .bedrmod files found in: {input_folder}")
 
-out_file = "test_consensus.bed"
-min_samples = 1
-q_score = 0.05
-frequency = 10
+    return files
 
-min_overlap = 100
-unique_mapping = False
-tRNA = True
+def main():
+    args = parse_args()
 
-run_consensus_creation(samples,out_file,min_samples,q_score,frequency,min_overlap,unique_mapping,tRNA)
+    samples = find_sample_files(args.input_folder)
+    print(f"Found {len(samples)} sample file(s) in {args.input_folder}:")
+    for s in samples:
+        print(f"  - {s}")
+
+    run_consensus_creation(
+        samples=samples,
+        out_file=args.out_file,
+        min_samples=args.min_samples,
+        q_score=args.q_score,
+        freq=args.freq,
+        min_overlap=args.min_overlap,
+        unique_mapping=args.unique_mapping,
+        tRNA=args.tRNA,
+    )
+
+
+if __name__ == "__main__":
+    main()
