@@ -44,18 +44,4 @@ Each subfolder contains specific WDL workflows designed for the unique alignment
 
 ## Role in the Overall LRS Analysis Pipeline
 
-The workflows in this directory represent the **upstream processing layer** of the Long-Read Sequencing reanalysis pipeline:
-
-```mermaid
-graph TD
-    A[Raw POD5 Data] --> B[wdl-pipelines-main / Upstream WDLs]
-    B -->|Basecall + Align + Pileup| C[BAM & Modkit BED Outputs]
-    C --> D[format_conversion_and_merging / Format Conversion]
-    D -->|Coordinate Liftover & BedRMod Formatting| E[BedRMod Files]
-    E --> F[wf-LRS-bedrmod-native-vs-ivt-main / Snakemake]
-    F -->|Fisher's Exact Test / BH FDR| G[Validated Modification Sites]
-```
-
-1. **Upstream (Here):** The WDL pipelines in this folder consume raw `POD5` signal data and output basecalled reads, genome/transcriptome alignments, and thresholded `Modkit` pileups.
-2. **Intermediate (Format Conversion):** The scripts in `format_conversion_and_merging/` take the resulting `Modkit` output files, perform reference lift-overs (translating transcriptomic coordinates back to genomic coordinates where appropriate), and convert them to the standardized `BedRMod` format.
-3. **Downstream (Analysis):** The Snakemake pipeline in `wf-LRS-bedrmod-native-vs-ivt-main/` processes the native and IVT `BedRMod` files, performing statistical comparisons (Fisher's exact test with FDR correction) to filter out basecalling errors and confidently identify authentic modification sites.
+These WDL workflows represent the **upstream processing layer** of the LRS data analysis pipeline. For a complete overview of the entire pipeline—from raw POD5 files to format conversion, filtering, and statistical validation—please refer to the top-level [README.md](../README.md).
