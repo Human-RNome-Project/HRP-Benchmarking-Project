@@ -1,6 +1,6 @@
 # Long-Read Sequencing (LRS) Modification Processing & Analysis Pipeline
 
-This directory contains the pipeline modules used to process Oxford Nanopore Technologies (ONT) direct RNA sequencing (dRNA-seq) datasets and identify post-transcriptional RNA modifications across various RNA biotypes (polyA/mRNA, rRNA, tRNA).
+This directory contains the pipeline modules used to process Long read sequencing (LRS) data and identify post-transcriptional RNA modifications across various RNA biotypes (polyA/mRNA, rRNA, tRNA).
 
 The pipeline is organized into three distinct layers, reflecting the progression of data from raw signal inputs to statistically validated modification sites.
 
