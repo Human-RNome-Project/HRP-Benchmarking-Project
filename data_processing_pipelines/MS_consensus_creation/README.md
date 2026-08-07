@@ -33,8 +33,6 @@ python consensus_creation_main.py \
     [--tRNA]
 ```
 
-Run `python consensus_creation_main.py --help` at any time to see this list with current defaults.
-
 ### Arguments
 
 | Argument | Default | Description |
@@ -70,10 +68,9 @@ python consensus_creation_main.py \
 
 Two files are written per run, based on `--out-file` (e.g. `test_consensus.bed`):
 
-- **`<name>.bed`** — the final consensus bedrmod file, reshaped into standard BED format.
+- **`<name>.bed`** — the final consensus bed file.
 - **`<name>_statistics.bed`** — an information-rich version of the consensus before final reshaping, including per-site sample-overlap statistics.
 
-Both files carry forward the original comment header (`#key=value`) lines from the input samples, followed by a column-header line and tab-separated BED data.
 
 ## Importent Notes
 
