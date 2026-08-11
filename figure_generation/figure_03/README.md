@@ -6,13 +6,13 @@ This folder contains the plotting scripts used to generate Figure 3 in the manus
 
 Figure 3 is assembled from two related analysis workflows:
 
-- `figure3a-f.py` generates the MS quantification panels for Figure 3a–f. These panels compare modification abundance across rRNA fractions (5S, 5.8S, 18S, 28S, tRNA and total RNA) using the intermediate Excel tables provided in this folder.
+- `figure3a-f.py` generates the MS quantification panels for Figure 3a–f. These panels compare modification abundance across rRNA fractions (5S, 5.8S, 18S, 28S, tRNA and total RNA).
 - `figure_3g.py` generates the cap-structure bar plot shown in Figure 3g.
 
 ## Contents
 
 - `figure3a-f.py`
-  - Loads the intermediate Excel exports for HRP-C-003, HRP-C-004/005/006/007/008/0010, HRP-C-021/022 and the combined mean/std workbook.
+  - Loads the intermediate Excel exports for HRP-C-003, HRP-C-004/005/006/007/008/0010, HRP-C-021/022 and the combined mean/std excel sheet.
   - Normalizes modification names with `translation_dicts.py`.
   - Produces for each analyzed RNA type a SVG barplot output.
 
