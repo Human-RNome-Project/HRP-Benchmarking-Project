@@ -12,10 +12,10 @@ The workflow progresses through the folders in this directory as follows:
 
 ```mermaid
 graph TD
-    A[Raw Data (.mzML)] --> B[1. OpenMS NucleicacidSearchEngine (NASE)/ NASE_rRNA or NASE_tRNA]
-    B -->|Fragment spectra generation + Spectra Matching + Scoring| C[Aligned Fragments .bedrmod]
-    C --> D[2. MS_consensus_creation]
-    D -->|Fragment Overlap + Sample Overlap + Conditional Filtering| E[Consensus Modifiaction File .bed + Stastics Consensus Modifiaction File .bed ]
+    A["Raw Data (.mzML)"] --> B["1. OpenMS NucleicacidSearchEngine (NASE) / NASE_rRNA or NASE_tRNA"]
+    B -->|"Fragment spectra generation + Spectra Matching + Scoring"| C["Aligned Fragments (.bedrmod)"]
+    C --> D["2. MS_consensus_creation"]
+    D -->|"Fragment Overlap + Sample Overlap + Conditional Filtering"| E["Consensus Modification File (.bed) + Statistics Consensus Modification File (.bed)"]
 ```
 
 ---
