@@ -1,4 +1,4 @@
-# NASE rRNA
+O# NASE rRNA
 This folder contains the rRNA-specific wrapper for the Human RNome MS-seq search workflow. It reproduces the relevant OpenMS DecoyDatabase to NucleicAcidSearchEngine
 steps on an `.mzML` file and an RNA FASTA reference, then writes a fragments containing `bedRMod` output file suitable for downstream consensus creation.
 
@@ -6,9 +6,9 @@ The script in this folder is the rRNA analogue of the tRNA workflow and is desig
 
 
 ## Installation
-A conda package will be available soon. For now install openms via following .deb file https://cloud.samwein.com/s/EMizZJcsiZKsKfE OpenMS-3.6.0-pre-add-bedrmod-2026-04-14-Debian-Linux-x86_64.deb. The package was only tested on Linux-Debian version X and might not work on other systems.
+A conda package will be available soon. For now install OpenMS via following .deb file https://cloud.samwein.com/s/EMizZJcsiZKsKfE OpenMS-3.6.0-pre-add-bedrmod-2026-04-14-Debian-Linux-x86_64.deb. The package was only tested on Linux-Debian version X and might not work on other systems.
 
-**Install the RNOME specific OpenMS version:**
+**Install the RNome specific OpenMS version:**
     ```bash
     sudo apt install OpenMS-3.6.0-pre-add-bedrmod-2026-04-14-Debian-Linux-x86_64.deb
     ```
@@ -23,7 +23,7 @@ A conda package will be available soon. For now install openms via following .de
    ```bash
    conda activate rnome_openms
    ``` 
-4. *optional donwload package for raw file conversion
+4. *optional download package for raw file conversion
     ```bash
     conda install -c bioconda -c conda-forge proteowizard
     ``
@@ -38,7 +38,7 @@ The workflow expects:
   - `NASE.ini`
   - `ChEBI_ID_RNA_mods_compatible.csv`
 
-The default rRNA refrecne in this folder is:
+The default rRNA reference in this folder is:
 
 - `hs_rRNAs.fa`
 
@@ -94,7 +94,5 @@ This output file is intended to be used as input for the downstream consensus cr
 4. Use the resulting `.bedrmod` file as input for the downstream filtering/consensus pipeline in [MS_consensus_creation](../MS_consensus_creation/README.md).
 
 
-## Importent Notes
-
-- The percursor and product tolerance values used in the RNome Paper are listed in the tolerances.ods file as an example
-- To change paramter within the analysis edit the NASE.ini or decoy_database.ini . The details of each parameter are explained on the linked [OpenMS](../OpenMS/)
+## Important Notes
+- To change parameter within the analysis edit the NASE.ini or decoy_database.ini . The details of each parameter are explained on the linked [OpenMS](../OpenMS/)
