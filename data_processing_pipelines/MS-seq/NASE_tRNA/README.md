@@ -23,23 +23,19 @@ The workflow expects:
   - `NASE.ini`
   - `ChEBI_ID_RNA_mods_compatible.csv`
 
-The default rRNA reference in this folder is:
-
-- `hg38_Homo_sapiens_merged_47.fa`
-
 ### Usage
 
 **main pipeline**
 ```bash
-python run_tRNA_analysis.py \
+docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
     <input.mzML> \
     <input.fasta> \
     --precursor-tolerance 10 \
     --product-tolerance 20 \
-    --output-dir ./results \
-    --decoy-ini ./decoy_database.ini \
-    --nase-ini ./NASE.ini \
-    --chebi-mapping ./ChEBI_ID_RNA_mods_compatible.csv
+    --output-dir <./results> \
+    --decoy-ini /data/decoy_database.ini \
+    --nase-ini /data/NASE.ini \
+    --chebi-mapping /data/ChEBI_ID_RNA_mods_compatible.csv
 ```
 
 ### Arguments
@@ -76,4 +72,4 @@ This output file is intended to be used as input for the downstream consensus cr
 
 ## Important Notes
 - To change parameters within the analysis edit the NASE.ini or decoy_database.ini . The details of each parameter are explained on the linked [OpenMS](../OpenMS/)
-
+- The refrence needs to caontain U not T

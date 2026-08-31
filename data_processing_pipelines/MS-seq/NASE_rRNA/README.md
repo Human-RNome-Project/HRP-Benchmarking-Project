@@ -36,10 +36,10 @@ docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
     <input.fasta> \
     --precursor-tolerance 10 \
     --product-tolerance 20 \
-    --output-dir ./results \
-    --decoy-ini ./decoy_database.ini \
-    --nase-ini ./NASE.ini \
-    --chebi-mapping ./ChEBI_ID_RNA_mods_compatible.csv
+    --output-dir <./results> \
+    --decoy-ini /data/decoy_database.ini \
+    --nase-ini /data/NASE.ini \
+    --chebi-mapping /data/ChEBI_ID_RNA_mods_compatible.csv
 ```
 
 ### Arguments
