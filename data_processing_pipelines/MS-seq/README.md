@@ -2,7 +2,7 @@
 
 This directory contains the pipeline modules used to process MS-seq data and identify post-transcriptional RNA modifications across the RNA biotypes rRNA and tRNA.
 
-The pipeline is organized into two distinct layers, the Open-MS spectra to a sequence mapping and the Consensus creation pipeline, combining aligned fragments and different samples to a consensus modification map.
+The pipeline is organized into two distinct layers, the Open-MS spectra to sequence mapping and the Consensus creation pipeline, combining aligned fragments and different samples to a consensus modification map.
 
 ---
 
@@ -43,7 +43,7 @@ The folder is divided into five main components:
 - **Key Features:**
   - Consensus_creation_main python script. Initiates the pipeline (see details in [README.md](MS_consensus_creation/README.md)).
 
-### 4. ["Docker"](docker/)
+### 4. [`Docker/`](docker/)
 - **Purpose:** Provides a docker entry point bash script to utilize the Docker image and MS-seq functions.
 
 ### 5. [`OpenMS/`](OpenMS/) (Main MS software bundle)
@@ -73,12 +73,12 @@ docker run --rm -v "$PWD":/data hrp-ms-seq:latest trna \
     --precursor-tolerance 10 --product-tolerance 20 --output-dir /data/results
 ```
 
-3. **Filtering and Consensus Modifications** Run the command below or follow the detailed instructions in the [`MS_consensus_creation/README.md`](MS_consensus_creation/README.md) to extract your modifications.
+3. **Filtering and Consensus Modifications:** Run the command below or follow the detailed instructions in the [`MS_consensus_creation/README.md`](MS_consensus_creation/README.md) to extract your modifications.
 
 ```bash
 docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
     --input-folder /data/samples --out-file /data/consensus.bed
 ```
-**Help**
+5. **Help:**
 Run `docker run --rm hrp-ms-seq:latest --help` for the full usage message, or pass `bash` as the mode for an interactive shell.
 
