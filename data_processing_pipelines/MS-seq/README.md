@@ -53,6 +53,30 @@ The folder is divided into four main components:
 1. **rRNA/tRNA Processing:** Follow the instructions in the [`NASE_rRNA/README.md`](NASE_rRNA/README.md) or [`NASE_tRNA/README.md`](NASE_tRNA/README.md) to get the aligned modified fragments.
 2. **Filtering and Consensus Modifications** Follow the instructions in the [`MS_consensus_creation/README.md`](MS_consensus_creation/README.md) to extract your modifications.
 
+---
 
+## Docker image
 
+A [`Dockerfile`](Dockerfile) is provided that bundles the OpenMS executables (`ghcr.io/openms/openms-executables:RNOME`) with a Python environment and all three pipeline scripts, so a single container can process one input file/sample at a time (e.g. as an HPC array-job task).
+
+**Build:**
+```bash
+docker build -t hrp-ms-seq:latest .
+```
+
+**Run** (mount your data folder and pick a mode: `rrna`, `trna`, or `consensus`):
+```bash
+docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
+    /data/sample.mzML /data/ref.fasta \
+    --precursor-tolerance 10 --product-tolerance 20 --output-dir /data/results
+
+docker run --rm -v "$PWD":/data hrp-ms-seq:latest trna \
+    /data/sample.mzML /data/ref.fasta \
+    --precursor-tolerance 10 --product-tolerance 20 --output-dir /data/results
+
+docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
+    --input-folder /data/samples --out-file /data/consensus.bed
+```
+
+Run `docker run --rm hrp-ms-seq:latest --help` for the full usage message, or pass `bash` as the mode for an interactive shell.
 
