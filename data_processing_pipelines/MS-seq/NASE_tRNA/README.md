@@ -17,7 +17,7 @@ A conda package will be available soon. For now use the provided [`Dockerfile`](
 The workflow expects:
 
 - an input `.mzML` file containing your MS-seq data
-- a FASTA sequence file for the target RNA species 
+- a FASTA sequence file for the target RNA species. Needs to have U instead of T.
 - configuration files in this folder:
   - `decoy_database.ini`
   - `NASE.ini`
@@ -27,7 +27,7 @@ The workflow expects:
 
 **main pipeline**
 ```bash
-docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
+docker run --rm -v "$PWD":/data hrp-ms-seq:latest trna \
     <input.mzML> \
     <input.fasta> \
     --precursor-tolerance 10 \
@@ -43,7 +43,7 @@ docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
 | Argument | Required | Description |
 |---|---|---|
 | `mzml` | Yes | Input mzML file containing the MS data. |
-| `fasta` | Yes | RNA FASTA reference used for the search. |
+| `fasta` | Yes | RNA FASTA reference used for the search. Needs to have U instead of T|
 | `--precursor-tolerance` | Yes | Precursor mass tolerance in ppm. |
 | `--product-tolerance` | Yes | Product/fragment ion mass tolerance in ppm. |
 | `--output-dir` | Yes | Directory where the result `.bedrmod` file will be written. |
@@ -72,4 +72,4 @@ This output file is intended to be used as input for the downstream consensus cr
 
 ## Important Notes
 - To change parameters within the analysis edit the NASE.ini or decoy_database.ini . The details of each parameter are explained on the linked [OpenMS](../OpenMS/)
-- The refrence needs to caontain U not T
+

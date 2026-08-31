@@ -17,15 +17,12 @@ A conda package will be available soon. For now use the provided [`Dockerfile`](
 The workflow expects:
 
 - an input `.mzML` file containing your MS-seq data
-- a FASTA sequence file for the target RNA species 
+- a FASTA sequence file for the target RNA species. Needs to have U instead of .
 - configuration files in this folder:
   - `decoy_database.ini`
   - `NASE.ini`
   - `ChEBI_ID_RNA_mods_compatible.csv`
 
-The default rRNA reference in this folder is:
-
-- `hs_rRNAs.fa`
 
 ### Usage
 
@@ -47,7 +44,7 @@ docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
 | Argument | Required | Description |
 |---|---|---|
 | `mzml` | Yes | Input mzML file containing the MS data. |
-| `fasta` | Yes | RNA FASTA reference used for the search. |
+| `fasta` | Yes | RNA FASTA reference used for the search. Needs to have U instead of T |
 | `--precursor-tolerance` | Yes | Precursor mass tolerance in ppm. |
 | `--product-tolerance` | Yes | Product/fragment ion mass tolerance in ppm. |
 | `--output-dir` | Yes | Directory where the result `.bedrmod` file will be written. |
