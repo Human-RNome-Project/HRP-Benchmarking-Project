@@ -23,7 +23,7 @@ graph TD
 
 ## Directory Overview
 
-The folder is divided into four main components:
+The folder is divided into five main components:
 
 ### 1. [`NASE_rRNA/`](NASE_rRNA/) (rRNA-pipeline)
 - **Purpose:** rRNA specific generation of digested fragments and their spectra, matching of these spectra with the sample, scoring of the results 
@@ -31,7 +31,7 @@ The folder is divided into four main components:
     - Pipeline execution script (see details in [README.md](NASE_rRNA/README.md)).
     - Pipeline Specifications for generation of decoy database and general workflow
 
-### 1. [`NASE_tRNA/`](NASE_tRNA/) (tRNA-pipeline)
+### 2. [`NASE_tRNA/`](NASE_tRNA/) (tRNA-pipeline)
 - **Purpose:** tRNA specific generation of digested fragments and their spectra, matching of these spectra with the sample, scoring of the results 
 - **Key Features:**
     - Pipeline execution script (see details in [README.md](NASE_rRNA/README.md)).
@@ -43,28 +43,26 @@ The folder is divided into four main components:
 - **Key Features:**
   - Consensus_creation_main python script. Initiates the pipeline (see details in [README.md](MS_consensus_creation/README.md)).
 
-### 4. [`OpenMS/`](OpenMS/) (Main MS software bundle)
+### 4. ["Docker"](docker/)
+- **Purpose:** Provides a docker entry point bash script to utilize the Docker image and MS-seq functions.
+
+### 5. [`OpenMS/`](OpenMS/) (Main MS software bundle)
 - **Purpose:** Links to the OpenMS github page. Further Details for developers and scientists to adapt our pipeline and use additional tools.
 
 ---
 
 ## Getting Started
 
-1. **rRNA/tRNA Processing:** Follow the instructions in the [`NASE_rRNA/README.md`](NASE_rRNA/README.md) or [`NASE_tRNA/README.md`](NASE_tRNA/README.md) to get the aligned modified fragments.
-2. **Filtering and Consensus Modifications** Follow the instructions in the [`MS_consensus_creation/README.md`](MS_consensus_creation/README.md) to extract your modifications.
+1. **Build our docker container**
 
----
+A [`Dockerfile`](Dockerfile) is provided that bundles the OpenMS executables (`ghcr.io/openms/openms-executables:RNOME`) with a Python environment and all three pipeline scripts, so a single container can process one input file/sample at a time (e.g. as an HPC array-job task). Docker needs to be already installed on your system.
 
-## Docker image
-
-A [`Dockerfile`](Dockerfile) is provided that bundles the OpenMS executables (`ghcr.io/openms/openms-executables:RNOME`) with a Python environment and all three pipeline scripts, so a single container can process one input file/sample at a time (e.g. as an HPC array-job task).
-
-**Build:**
 ```bash
 docker build -t hrp-ms-seq:latest .
 ```
 
-**Run** (mount your data folder and pick a mode: `rrna`, `trna`, or `consensus`):
+2. **rRNA/tRNA Processing:** Run the command below or follow the detailed instructions in the [`NASE_rRNA/README.md`](NASE_rRNA/README.md) or [`NASE_tRNA/README.md`](NASE_tRNA/README.md) to get the aligned modified fragments.
+
 ```bash
 docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
     /data/sample.mzML /data/ref.fasta \
@@ -73,10 +71,14 @@ docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
 docker run --rm -v "$PWD":/data hrp-ms-seq:latest trna \
     /data/sample.mzML /data/ref.fasta \
     --precursor-tolerance 10 --product-tolerance 20 --output-dir /data/results
+```
 
+3. **Filtering and Consensus Modifications** Run the command below or follow the detailed instructions in the [`MS_consensus_creation/README.md`](MS_consensus_creation/README.md) to extract your modifications.
+
+```bash
 docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
     --input-folder /data/samples --out-file /data/consensus.bed
 ```
-
+**Help**
 Run `docker run --rm hrp-ms-seq:latest --help` for the full usage message, or pass `bash` as the mode for an interactive shell.
 

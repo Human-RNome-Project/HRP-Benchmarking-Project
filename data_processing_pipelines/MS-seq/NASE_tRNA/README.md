@@ -6,27 +6,12 @@ The script in this folder is the tRNA analogue of the rRNA workflow and is desig
 
 
 ## Installation
-A conda package will be available soon. For now install OpenMS via following .deb file https://cloud.samwein.com/s/EMizZJcsiZKsKfE OpenMS-3.6.0-pre-add-bedrmod-2026-04-14-Debian-Linux-x86_64.deb. The package was only tested on Linux-Debian version X and might not work on other systems.
+A conda package will be available soon. For now use the provided [`Dockerfile`](Dockerfile). 
 
-**Install the RNOME specific OpenMS version:**
-    ```bash
-    sudo apt install OpenMS-3.6.0-pre-add-bedrmod-2026-04-14-Debian-Linux-x86_64.deb
-    ```
-
-**Create a python environment**
-1. Ensure you have Conda (or Miniconda/Mamba) installed.
-2. Create the environment by running:
-   ```bash
-   conda create -n rnome_openms python=3.10
-   ```
-3. Activate the environment:
-   ```bash
-   conda activate rnome_openms
-   ``` 
-4. *optional download package for raw file conversion
-    ```bash
-    conda install -c bioconda -c conda-forge proteowizard
-    ``
+**Build the docker container:**
+```bash
+    docker build -t hrp-ms-seq:latest .
+```
 
 ## Input data
 The workflow expects:
@@ -43,11 +28,6 @@ The default rRNA reference in this folder is:
 - `hg38_Homo_sapiens_merged_47.fa`
 
 ### Usage
-
-**In case you have a non .mzML raw data file**
-```bash
-msconvert file_name.X --mzML --outfile file_name.mzML
-```
 
 **main pipeline**
 ```bash

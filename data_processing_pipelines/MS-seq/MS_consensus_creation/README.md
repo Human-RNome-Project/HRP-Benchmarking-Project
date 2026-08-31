@@ -14,6 +14,11 @@ The pipeline requires pandas.
    ```bash
    conda activate MS-seq_consensus_creation
    ```
+### Using Docker
+Start this from MS-seq main directory.
+```bash
+docker build -t hrp-ms-seq:latest .
+```
 
 ## Input data
 
@@ -32,6 +37,20 @@ python consensus_creation_main.py \
     [--unique-mapping | --no-unique-mapping] \
     [--tRNA]
 ```
+or
+
+```bash
+docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
+    --input-folder /data/samples \
+    --out-file /data/consensus.bed \
+    [--min-samples INT] \
+    [--q-score FLOAT] \
+    [--freq FLOAT] \
+    [--min-overlap INT] \
+    [--unique-mapping | --no-unique-mapping] \
+    [--tRNA]
+```
+
 
 ### Arguments
 
