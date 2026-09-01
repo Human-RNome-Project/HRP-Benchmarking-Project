@@ -1,0 +1,28 @@
+# =====================================================================
+# Conda environment for liftover_to_BedRMod.py
+# ---------------------------------------------------------------------
+# Create and activate with:
+#
+#     conda env create -f liftover_environment.yml
+#     conda activate bedrmod
+#     python liftover_to_BedRMod.py --help
+#
+# (mamba works too and is faster: `mamba env create -f liftover_environment.yml`.)
+#
+# Dependencies
+# ------------
+# * polars  — all DataFrame loading, mapping and I/O.
+# * numpy   — imported by the script.
+# * tqdm    — progress bar over the input files.
+# `argparse` is part of the Python standard library and needs no install.
+# =====================================================================
+name: bedrmod
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python>=3.9
+  - polars>=0.20
+  - numpy>=1.23
+  - tqdm>=4.64
