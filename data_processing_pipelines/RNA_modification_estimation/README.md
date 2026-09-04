@@ -49,6 +49,21 @@ To download the required input files and set up your environment:
 
 2. Download all data files from the `processed_data/RNA_modificaiton_estimation` folder on the DOE Data Explorer and place them inside the `inputs/` folder. The required file structure is described in detail below.
 
+> [!NOTE]
+> **Upstream Input Generation (`pysamstats`):**
+> Prior to the estimation pipeline, initial position-level count tables (`*_variation.tsv` / `*_variation.tsv.gz`) were generated upstream from aligned BAM files and a reference FASTA:
+> 1. **Alignment Filtering (`samtools`):** Primary alignments were extracted per chromosome or target sequence from the alignment BAM using `samtools view -F 2304` to remove non-primary (secondary and supplementary) alignments.
+> 2. **Count Table Generation (`pysamstats`):** Count tables were created using `pysamstats` with the following parameters:
+>    - `--type variation`: outputs position-by-position base count and variation statistics.
+>    - `--fasta <ref_genome>`: specifies the reference genome/transcriptome FASTA file.
+>    - `--min-mapq 20`: filters out reads with mapping quality below 20.
+>    - `--pad`: pads unread or missing positions across the target sequence.
+>    - `-D 500000`: sets the max coverage depth limit to 500,000.
+>    - `--chromosome <chrom>`: specifies the chromosome or target sequence being processed.
+> 
+> The resulting per-chromosome `*_variation.tsv` files serve as the input count tables processed by the upstream generation scripts (`calculate_native_mismatch_rates_memeff_fast.py`, `calculate_coverage_error_rate.py`, and `rdd_genomewide.py`) located in `scripts/generation/`.
+
+
 ## Panels and Required Inputs
 
 The scripts in `scripts/panels/` require the following pre-calculated data files to be present in the `inputs/` folder.
