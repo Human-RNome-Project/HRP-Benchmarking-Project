@@ -53,7 +53,7 @@ rm(cano_trans, txlen, exon_by_tx, gr_tx, txdb)
 # =======================================================================
 valid_chr = as.character(unique(unlist(seqnames(ANNO$exon_by_tx))))
 
-file = paste0(datadir, "Illumina_combined_polyARNA_tRNA_rRNA.bed")
+file = paste0(datadir, "Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed")
 bed = data.table::fread(file, data.table = F, check.names = T) %>% 
   filter(X.chrom %in% valid_chr) %>%
   mutate(ID = paste(X.chrom, chromEnd, strand, sep = "_")) %>%
