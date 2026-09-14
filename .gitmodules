@@ -1,0 +1,3 @@
+[submodule "data_processing_pipelines/MS-seq/OpenMS"]
+	path = data_processing_pipelines/MS-seq/OpenMS
+	url = https://github.com/OpenMS/OpenMS.git
