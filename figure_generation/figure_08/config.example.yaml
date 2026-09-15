@@ -1,0 +1,222 @@
+# =====================================================================
+# config.example.yaml
+# ---------------------------------------------------------------------
+# Batch configuration for biotype_analysis.py. Run with:
+#
+#     python biotype_analysis.py --config config.example.yaml
+#
+# This reproduces the three analyses from the original script
+# (polyA RNA, rRNA, tRNA). Adjust the paths, sample names and options
+# for your own data. Anything under `defaults` is inherited by every
+# analysis and can be overridden per analysis.
+# =====================================================================
+
+defaults:
+  # GTF is parsed once and cached across analyses that share the same path.
+  gtf: /global/cfs/cdirs/m5243/references/gencode.v49.basic.annotation.gtf
+  output_dir: biotype_results
+  # Column used to sort the composition table (falls back to total signal
+  # if the column is absent).
+  sort_by: combined
+  # Built-in palette name ("gene_type" / "transcript"), an inline mapping,
+  # or a path to a YAML/JSON colour file.
+  palette: gene_type
+  # Set to false to always use the built-in GTF parser (no dmode needed).
+  prefer_dmode: true
+
+analyses:
+
+  # -------------------------------------------------------------------
+  # 1. polyA RNA
+  # -------------------------------------------------------------------
+  - name: polyA
+    # base dir for this dataset (kept here only for readability; paths below
+    # are the full paths actually used).
+    counts:
+      HRP_A_001_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_001_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_002_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_002_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_003_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_003_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_005_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_005_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_006_4: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_006_native_polyA_RNA_004.merged.aligned.sorted.tsv
+      HRP_A_007_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_007_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_009_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_009_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_009_2: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_009_native_polyA_RNA_002.merged.aligned.sorted.tsv
+      HRP_A_010_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_010_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_010_2: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_010_native_polyA_RNA_002.merged.aligned.sorted.tsv
+      HRP_A_011_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_011_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_011_2: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_011_native_polyA_RNA_002.merged.aligned.sorted.tsv
+      HRP_A_011_3: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_011_native_polyA_RNA_003.merged.aligned.sorted.tsv
+      HRP_A_013_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_013_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_014_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_014_native_polyA_RNA_001.merged.aligned.sorted.tsv
+    combined: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/polyA_native_merged.merged.tsv
+    table_name: gene_type_composition_polyA.tsv
+    # Two figures, matching the original: combined-only, then all samples.
+    plots:
+      - sample_cols: [combined]
+        y_label: polyA RNA
+        hide_yticks: true
+        figsize: [16, 4]
+        threshold: 0.01
+        outfile: Figure1_gene_type_composition_combined_only_CPMS.pdf
+      - sample_cols: null        # null = all non-combined samples
+        y_label: Sample
+        figsize: [16, 8]
+        threshold: 0.01
+        reverse: true            # original reversed the sample order
+        outfile: Figure1_gene_type_composition.pdf
+
+  # -------------------------------------------------------------------
+  # 2. rRNA
+  # -------------------------------------------------------------------
+  - name: rRNA
+    counts:
+      HRP_A_006_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_SUP_Gerber_native_rRNA_251118_r1_v1.merged.aligned.sorted.tsv
+      HRP_A_017_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_rRNA_native_rep1.merged.aligned.sorted.tsv
+      HRP_A_017_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_rRNA_native_rep2.merged.aligned.sorted.tsv
+      HRP_A_017_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_rRNA_native_rep3.merged.aligned.sorted.tsv
+      HRP_A_018_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_Eppendorf_Rep1.merged.aligned.sorted.tsv
+      HRP_A_018_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_Eppendorf_Rep2.merged.aligned.sorted.tsv
+      HRP_A_018_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_Eppendorf_Rep3.merged.aligned.sorted.tsv
+    combined: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/merged_rRNA_samples.tsv
+    # This GTF differs from the default; override it here.
+    gtf: /home/stefan/Synology/Data_jamboree/final_bedRmods/ont/unaligned_rRNA_bams/combined_v49_rRNAs.gtf
+    output_dir: biotype_results/rRNA
+    table_name: gene_type_composition_rRNA.tsv
+    # Collapse rRNA subunit labels into a single "rRNA" biotype.
+    relabel:
+      rRNA_5S: rRNA
+      rRNA_5.8S: rRNA
+      rRNA_18S: rRNA
+      rRNA_28S: rRNA
+    plots:
+      - sample_cols: [combined]
+        y_label: rRNA
+        hide_yticks: true
+        figsize: [16, 4]
+        threshold: 0.01
+        outfile: Figure1_rRNA_biotype_CPMS_single_dataset.pdf
+      - sample_cols: null
+        y_label: Sample
+        figsize: [16, 8]
+        threshold: 0.01
+        reverse: true
+        outfile: Figure1_rRNA_biotype_CPMS.pdf
+
+  # -------------------------------------------------------------------
+  # 3. tRNA
+  # -------------------------------------------------------------------
+  - name: tRNA
+    counts:
+      HRP_A_004_1:   /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/native_tRNA_SUP_ADAMCZYK_M_NATIVE_tRNA_003_final_merge.tsv
+      HRP_A_006_1:   /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/native_tRNA_SUP_GERBER_ONT_native_tRNA_final_merge.tsv
+      HRP_A_012_1:   /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/native_tRNA_SUP_Soares_ONT_native_tRNA_final_merge.tsv
+      HRP_A_020_1_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_1_native_tRNA_001_final_merge.tsv
+      HRP_A_020_1_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_1_native_tRNA_002_final_merge.tsv
+      HRP_A_020_1_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_1_native_tRNA_003_final_merge.tsv
+      HRP_A_020_2_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_2_native_tRNA_001_final_merge.tsv
+      HRP_A_020_2_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_2_native_tRNA_002_final_merge.tsv
+      HRP_A_020_2_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_2_native_tRNA_003_final_merge.tsv
+      HRP_A_020_3_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_3_native_tRNA_001_final_merge.tsv
+      HRP_A_020_3_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_3_native_tRNA_002_final_merge.tsv
+      HRP_A_020_3_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_3_native_tRNA_003_final_merge.tsv
+      HRP_A_021_1_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_021_1_native_tRNA_001_final_merge.tsv
+      HRP_A_021_1_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_021_1_native_tRNA_002_final_merge.tsv
+      HRP_A_021_1_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_021_1_native_tRNA_003_final_merge.tsv
+    combined: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/combined_dataset_final_merge.tsv
+    gtf: /mnt/data01/stpastore/final_bedRmods/unaligned_tRNA_bams/combined_v49_rRNAs_tRNAs.gtf
+    output_dir: biotype_results/tRNA
+    table_name: gene_type_composition_tRNA.tsv
+    font_preset: small
+    # Rename the raw tRNA/rRNA gene_type labels to short amino-acid_anticodon
+    # names (see the original script for the full intent).
+    relabel:
+      rRNA_5S: "5S"
+      rRNA_5.8S: "5.8S"
+      rRNA_18S: "18S"
+      rRNA_28S: "28S"
+      mt-rRNA_12s: mt-12S
+      mt-rRNA_16s: mt-16S
+      tRNAAla_CGC: Ala_CGC
+      tRNAAla_TGC: Ala_TGC
+      tRNAAla_AGC: Ala_AGC
+      tRNAArg_ACG: Arg_ACG
+      tRNAArg_TCG: Arg_TCG
+      tRNAArg_CCG2: Arg_CCG2
+      tRNAArg_TCT2: Arg_TCT2
+      tRNAArg_CCT: Arg_CCT
+      tRNAArg_CCG1: Arg_CCG1
+      tRNAArg_TCT1: Arg_TCT1
+      tRNAAsn_GTT: Asn_GTT
+      tRNAAsp_GTC: Asp_GTC
+      tRNACys_GCA: Cys_GCA
+      tRNAGln_CTG_TTG: Gln_CTG_TTG
+      tRNAGlu_CTC: Glu_CTC
+      tRNAGlu_TTC: Glu_TTC
+      tRNAGly_GCC: Gly_GCC
+      tRNAGly_TCC: Gly_TCC
+      tRNAGly_CCC: Gly_CCC
+      tRNAHis_GTG: His_GTG
+      tRNAIle_AAT: Ile_AAT
+      tRNAIle_TAT: Ile_TAT
+      tRNAIle_GAT: Ile_GAT
+      tRNALeu_AAG: Leu_AAG
+      tRNALeu_CAG: Leu_CAG
+      tRNALeu_CAA: Leu_CAA
+      tRNALeu_TAA: Leu_TAA
+      tRNALys_CTT: Lys_CTT
+      tRNALys_TTT: Lys_TTT
+      tRNAMet_CAT: Met_CAT
+      tRNAPhe_GAA: Phe_GAA
+      tRNAPro_AGG_CGG_TGG: Pro_AGG_CGG_TGG
+      tRNASeC_TCA: SeC_TCA
+      tRNASer_AGA: Ser_AGA
+      tRNASer_CGA: Ser_CGA
+      tRNASer_GCT: Ser_GCT
+      tRNAThr_AGT: Thr_AGT
+      tRNAThr_CGT1: Thr_CGT1
+      tRNAThr_TGT: Thr_TGT
+      tRNAThr_CGT2: Thr_CGT2
+      tRNATrp_CCA: Trp_CCA
+      tRNATyr_GTA2: Tyr_GTA2
+      tRNATyr_ATA: Tyr_ATA
+      tRNATyr_GTA1: Tyr_GTA1
+      tRNAVal_AAC_CAC: Val_AAC_CAC
+      tRNAVal_TAC: Val_TAC
+      mttRNAAla_TGC: mt-Ala_TGC
+      mttRNAArg_TCG: mt-Arg_TCG
+      mttRNAAsn_GTT: mt-Asn_GTT
+      mttRNAAsp_GTC: mt-Asp_GTC
+      mttRNACys_GCA: mt-Cys_GCA
+      mttRNAGln_TTG: mt-Gln_TTG
+      mttRNAGlu_TTC: mt-Glu_TTC
+      mttRNAGly_TCC: mt-Gly_TCC
+      mttRNAHis_GTG: mt-His_GTG
+      mttRNAIle_GAT: mt-Ile_GAT
+      mttRNALeu_TAA: mt-Leu_TAA
+      mttRNALeu_TAG: mt-Leu_TAG
+      mttRNALys_TTT: mt-Lys_TTT
+      mttRNAMet_CAT: mt-Met_CAT
+      mttRNAPhe_GAA: mt-Phe_GAA
+      mttRNAPro_TGG: mt-Pro_TGG
+      mttRNASer_GCT: mt-Ser_GCT
+      mttRNASer_TGA: mt-Ser_TGA
+      mttRNAThr_TGT: mt-Thr_TGT
+      mttRNATrp_TCA: mt-Trp_TCA
+      mttRNATyr_GTA: mt-Tyr_GTA
+      mttRNAVal_TAC: mt-Val_TAC
+    plots:
+      # Top-8 biotypes, combined only.
+      - sample_cols: [combined]
+        y_label: Sample
+        figsize: [16, 4]
+        method: top_n
+        top_n: 8
+        outfile: Figure1E_tRNA_biotypes.pdf
+      # All samples, fraction threshold.
+      - sample_cols: null
+        y_label: tRNA
+        hide_yticks: true
+        figsize: [16, 8]
+        threshold: 0.01
+        reverse: true
+        outfile: Figure1_tRNA_biotype_CPMS.pdf
