@@ -31,20 +31,21 @@ This directory contains the plotting scripts used to generate Figure11 in the ma
 
 These scripts require the following R packages:
 
-- tidyverse
-- GenomicFeatures
-- clusterProfiler
-- org.Hs.eg.db
-- UpSetR
-- patchwork
-- ggseqlogo
+- R>=4.3.3
+- tidyverse>=2.0.0
+- GenomicFeatures>=1.58.0
+- clusterProfiler>=4.14.0
+- org.Hs.eg.db>=3.20.0
+- UpSetR>=1.4.0
+- patchwork>=1.3.2
+- ggseqlogo>=0.2.2
 
 
 ## Inputs
 
 - Gencode GTF annotation: gencode.v49.primary_assembly.annotation.gtf
   - Canonical ensembl transcript for each gene are labelled by tag "Ensembl_canonical" in the GTP file
-- Combined bedRmod file for SRS modification sites
+- Combined bedRmod file for SRS modification sites: Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed
 
 
 ## Typical Workflow
