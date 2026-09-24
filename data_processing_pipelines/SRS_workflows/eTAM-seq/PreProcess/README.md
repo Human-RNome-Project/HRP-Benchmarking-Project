@@ -112,7 +112,7 @@ hisat-3n indexes (tens of GB with the repeat index).
 
 ### Data Download Instructions
 
-FASTQ files are not in this repository. They are expected in `$FQ_DIR` (`fq/` by default) of the
+FASTQ files are not in this repository. You can download the FASTQ files from the RNome Data Explorer "Short-read Sequencing" folder under the "Raw Data" folder. The files needed for this pipeline correspond to the sample "HRP_B_002". After downloading, these FASTQ files are expected in `$FQ_DIR` (`fq/` by default) of the
 working directory, with the Illumina-style naming used by the glob patterns of `run`. The
 reference files come from `$REF_DIR` — where to download or rebuild each of them is detailed in
 *Reference data: where to get it*.
