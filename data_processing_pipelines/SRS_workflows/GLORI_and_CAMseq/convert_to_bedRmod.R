@@ -1,5 +1,3 @@
-library(optparse)
-
 suppressPackageStartupMessages({
   library(optparse)
   library(dplyr)
@@ -17,12 +15,26 @@ suppressPackageStartupMessages({
 #' @param min_Ratio minimum m6A level, default is 0.1
 #' @param max_FDR maximum FDR, default is 0.05
 fun_convert_to_bedRmod = function(
-  fin, outdir, seqMethod = "GLORI", modification = "m6A", 
+  fin, outdir, seqMethod, modification = "m6A", 
   min_AGcov = 15, min_Acov = 5, min_Signal_Ratio = 0.8, 
   min_Ratio = 0.1, max_FDR = 0.05
   ) {
   # read data and generate columns of bedRmod
-  sampleName = sub(".totalm6A.FDR.csv(.gz)?$", "", basename(fin))
+  sampleName = sub("\\.totalm6A\\.FDR\\.csv(\\.gz)?$", "", basename(fin))
+
+  if (sampleName == basename(fin)) {
+    stop(
+      paste0(
+        "Cannot infer sample name from input file: ", basename(fin),
+        ". Expected a file ending with .totalm6A.FDR.csv or .totalm6A.FDR.csv.gz"
+      ),
+      call. = FALSE
+    )
+  }
+
+  if (!dir.exists(args$outdir)) {
+    dir.create(args$outdir, recursive = TRUE)
+  }
 
   df = data.table::fread(fin, data.table = F) %>% 
     filter(
@@ -42,7 +54,6 @@ fun_convert_to_bedRmod = function(
     "thickStart", "thickEnd", "itemRgb", "coverage", "frequency",
     "nRep", "repName", "repScore", "repCov", "repFreq", "method")
 
-  print(all_col[!(all_col %in% colnames(df))])
   
   df = df[, all_col]
   colnames(df)[1] = paste0("#", colnames(df)[1])
@@ -54,8 +65,8 @@ option_list = list(
     help = "Input GLORI-DUO-tools CSV or CSV.GZ file [required]"),
   make_option(c("-o", "--outdir"), type = "character",
     help = "Output directory [required]"),
-  make_option(c("--seqMethod"), type = "character", default = "GLORI",
-    help = "Sequencing method [default: %default]"),
+  make_option(c("--seqMethod"), type = "character", 
+    help = "Sequencing method [required]"),
   make_option(c("-m", "--modification"), type = "character", default = "m6A",
     help = "Modification type [default: %default]"),
   make_option(c("--min_AGcov"),  type = "integer", default = 15, 
@@ -96,5 +107,10 @@ fun_convert_to_bedRmod(
   fin = args$input,
   outdir = args$outdir,
   seqMethod = args$seqMethod,
-  modification = args$modification
+  modification = args$modification,
+  min_AGcov = args$min_AGcov,
+  min_Acov = args$min_Acov,
+  min_Signal_Ratio = args$min_Signal_Ratio,
+  min_Ratio = args$min_Ratio,
+  max_FDR = args$max_FDR
 )
