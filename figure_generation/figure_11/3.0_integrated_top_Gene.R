@@ -18,7 +18,7 @@ option_list = list(
 
 parser = OptionParser(
   usage = "%prog [options]",
-  description = "Annotate modifications sites to 5' UTR, CDS and 3' UTR of canonical ensembl transcript of genes",
+  description = "Barplot for top20 genes with highest average number of modifications sites",
   option_list = option_list
 )
 args = parse_args(parser)

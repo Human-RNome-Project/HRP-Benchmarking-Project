@@ -4,27 +4,12 @@ This directory contains the plotting scripts used to generate Figure11 in the ma
 
 ## Scripts
 
-- 0.0_anno_to_gene.R
-  - Annotate modifications sites to canonical ensembl transcript of genes
-  - Calculate relative location in 5' UTR, CDS and 3' UTR for metagene plot
-
-- 1.0_compare_replicates.R
-  - UpSet plot to compare modification sites in replicates
-
-- 2.0_compare_methods.R
-  - UpSet plot to compare modifications sites from different methods
-
-- 3.0_integrated_metagene.R
-  - Plot number of modifications sites for polyA-enriched RNAs
-  - Plot distribution of modification levels for each method
-  - Plot region distrition and metagene plot for relative location in transcriptome
-  - Plot mean modification levels along the transcriptome
-
-- 3.1_integrated_top_Gene.R
-  - Get genes with highest average number of modification sites per transcript
-
-- 3.2_integrated_motif.R
-  - Motif plot
+| File | Purpose |
+|------------|-------------|
+| `0.0_anno_to_gene.R`  | Annotate modifications sites to 5' UTR, CDS and 3' UTR of canonical ensembl transcript of genes |
+| `1.0_integrated_metagene.R` | Plot number of modifications sites for polyA-enriched RNAs; Plot region distrition and metagene plot for relative location in transcriptome;Plot mean modification levels along the transcriptome |
+| `2.0_integrated_motif.R` | Seq log plot for polyA modifications |
+| `3.0_integrated_top_Gene.R` | Barplot for top20 genes with highest average number of modifications sites |
 
 
 ## Dependencies
@@ -39,17 +24,17 @@ These scripts require the following R packages:
 - UpSetR>=1.4.0
 - patchwork>=1.3.2
 - ggseqlogo>=0.2.2
-- data.table
-- rtracklayer
-- qs
-- ggsci
+- data.table>=1.15.4
+- rtracklayer>=1.66.0
+- qs>=0.26.3
+- ggsci>=3.2.0
 
-bedtools >=xxx is also needed to get motif from genome FASTAs. 
+bedtools >=2.31.1 is also needed to get motif from genome FASTAs. 
 
 
 # Usage/Step-wise Execution
 
-## Step 1: prepare GTF file and merged bedRmod for Illumina
+## Step 1: prepare GTF file, hg38 FASTA and merged bedRmod for Illumina
 
 ```sh
 indir="test_input"
@@ -73,8 +58,8 @@ mv GRCh38.primary_assembly.genome.fa ${indir}
 
 | Input File | Description | File Type/Format | Script Usage |
 |------------|-------------|------------------|--------------|
-| `Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed`  | Merged bedRmod for Illumina platform derived from upstream pipelines, could also be downloaded from our UCSC genome browser | Tab-separated bedRMod (`.bed`) | `0.0_anno_to_gene.R` |
-| `gencode.v49.primary_assembly.annotation.gtf.gz` | GTF file from Gencode | GTF format |  `0.0_anno_to_gene.R` |
+| `${indir}/Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed`  | Merged bedRmod for Illumina platform derived from upstream pipelines, could also be downloaded from our UCSC genome browser | Tab-separated bedRMod (`.bed`) | `0.0_anno_to_gene.R` |
+| `${indir}/gencode.v49.primary_assembly.annotation.gtf.gz` | GTF file from Gencode | GTF format |  `0.0_anno_to_gene.R` |
 
 
 ### Usage
@@ -104,7 +89,7 @@ Rscript 0.0_anno_to_gene.R -i ${indir}/Illumina_combined_polyARNA_tRNA_rRNA_rmch
 
 | Input File | Description | File Type/Format | Script Usage |
 |------------|-------------|------------------|--------------|
-| `Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed`  | Merged bedRmod for Illumina platform derived from upstream pipelines, could also be downloaded from our UCSC genome browser | Tab-separated bedRMod (`.bed`) | `1.0_integrated_metagene.R` |
+| `${indir}/Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed`  | Merged bedRmod for Illumina platform derived from upstream pipelines, could also be downloaded from our UCSC genome browser | Tab-separated bedRMod (`.bed`) | `1.0_integrated_metagene.R` |
 | `${outdir}/Illumina_polyA_mod_annotated.tsv` | Modification sites with annotated from last step | Tab-separated files |  `1.0_integrated_metagene.R` |
 
 ### Usage
@@ -133,8 +118,8 @@ Rscript 1.0_integrated_metagene.R -i ${indir}/Illumina_combined_polyARNA_tRNA_rR
 
 | Input File | Description | File Type/Format | Script Usage |
 |------------|-------------|------------------|--------------|
-| `Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed`  | Merged bedRmod for Illumina platform derived from upstream pipelines, could also be downloaded from our UCSC genome browser | Tab-separated bedRMod (`.bed`) | `2.0_integrated_motif.R` |
-| `GRCh38.primary_assembly.genome.fa` | Genome reference file used to get motif | FASTA | `2.0_integrated_motif.R` |
+| `${indir}/Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed`  | Merged bedRmod for Illumina platform derived from upstream pipelines, could also be downloaded from our UCSC genome browser | Tab-separated bedRMod (`.bed`) | `2.0_integrated_motif.R` |
+| `${indir}/GRCh38.primary_assembly.genome.fa` | Genome reference file used to get motif | FASTA | `2.0_integrated_motif.R` |
 
 
 ### Usage
@@ -147,7 +132,8 @@ Rscript 2.0_integrated_motif.R -i ${indir}/Illumina_combined_polyARNA_tRNA_rRNA_
   -o ${outdir}
 
 # Note: 
-# 1. Several minutes needed to get motif of Inosine sites
+# 1. bedtools gesfasta is called within the R script
+# 2. Several minutes needed to get motif of Inosine sites
 ```
 
 
@@ -164,8 +150,8 @@ Rscript 2.0_integrated_motif.R -i ${indir}/Illumina_combined_polyARNA_tRNA_rRNA_
 
 | Input File | Description | File Type/Format | Script Usage |
 |------------|-------------|------------------|--------------|
-| `Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed`  | Merged bedRmod for Illumina platform derived from upstream pipelines, could also be downloaded from our UCSC genome browser | Tab-separated bedRMod (`.bed`) | `3.0_integrated_top_Gene.R` |
-| `gencode.v49.primary_assembly.annotation.gtf.gz` | GTF file from Gencode | GTF format |  `3.0_integrated_top_Gene.R` |
+| `${indir}/Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed`  | Merged bedRmod for Illumina platform derived from upstream pipelines, could also be downloaded from our UCSC genome browser | Tab-separated bedRMod (`.bed`) | `3.0_integrated_top_Gene.R` |
+| `${outdir}/Illumina_polyA_mod_annotated.tsv` | Modification sites with annotated from step 2 | Tab-separated files |  `3.0_integrated_top_Gene.R` |
 
 
 ### Usage

@@ -15,7 +15,7 @@ option_list = list(
 
 parser = OptionParser(
   usage = "%prog [options]",
-  description = "Annotate modifications sites to 5' UTR, CDS and 3' UTR of canonical ensembl transcript of genes",
+  description = "Plot number of sites for each mod and mod distribution along the transcript",
   option_list = option_list
 )
 args = parse_args(parser)
