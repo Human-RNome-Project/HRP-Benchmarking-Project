@@ -1,0 +1,18 @@
+# conda environment for the UMBS-seq (UBS-seq) RNome workflow
+#   conda env create -f UMBS_pipeline.yml
+#   conda activate UMBS_pipeline
+name: UMBS_pipeline
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - cutadapt=5.2
+  - hisat-3n=0.0.3        # provides hisat-3n and hisat-3n-table (hisat2 2.2.1)
+  - samtools=1.23.1
+  - htslib=1.23.1         # bgzip / tabix
+  - gatk4=4.5.0.0
+  - pigz
+  - numpy
+  - pandas
+  - scipy
