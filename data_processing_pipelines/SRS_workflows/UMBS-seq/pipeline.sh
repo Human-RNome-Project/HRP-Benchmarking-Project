@@ -3,7 +3,7 @@ set -euo pipefail
 
 # =============================================================================
 # UMBS-seq (UBS-seq) core pipeline for the HRP m5C RNome samples
-#   He_m5C_UMBS_seq_rep1 = YSL-5 , He_m5C_UMBS_seq_rep2 = YSL-6
+#   m5C_UMBS_seq_rep1 = YSL-5 , m5C_UMBS_seq_rep2 = YSL-6
 #
 # Reproduces 02_core_pipeline.ipynb as a standalone script.
 # Steps: trim -> map -> mark_duplicates -> dedup -> split_refs -> dedup_filter
