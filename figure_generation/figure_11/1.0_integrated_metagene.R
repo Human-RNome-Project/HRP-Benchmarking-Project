@@ -1,6 +1,24 @@
-rm(list=ls())
-library(tidyverse)
-library(patchwork)
+suppressPackageStartupMessages({
+  library(optparse)
+  library(tidyverse)
+  library(patchwork)
+})
+
+option_list = list(
+  make_option(c("-i", "--input"), type = "character",
+    help = "Merged Illumina bedRmod, e.g., Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed [required]"),
+  make_option(c("-a", "--anno", type = "character"), 
+    help = "Illumina_polyA_mod_annotated.tsv from 0.0_anno_to_gene.R"),
+  make_option(c("-o", "--outdir"), type = "character",
+    help = "Output directory [required]")
+)
+
+parser = OptionParser(
+  usage = "%prog [options]",
+  description = "Annotate modifications sites to 5' UTR, CDS and 3' UTR of canonical ensembl transcript of genes",
+  option_list = option_list
+)
+args = parse_args(parser)
 
 mod_color = c(
    # A — m6A family (deep crimson → light blush)
@@ -42,14 +60,11 @@ mod_color = c(
    "U*" = "#F8D870")
 
 used_mods = c("I", "m5C", "m6A", "Y")
-datadir = "data/My/Integrated/bedRmod_final/"
-outdir = "data/My/Integrated/Illumina_polyA/res/Integrated/"
 
 # ================================================
-# 1. number of sites by mod (Fig6A, SxA, SxB)
+# 1. number of sites by mod (Fig11A, SuppA, SuppB)
 # ================================================
-file = paste0(datadir, "Illumina_combined_polyARNA_tRNA_rRNA_rmchrY.bed")
-final = data.table::fread(file, data.table = F, check.names = T) %>%
+final = data.table::fread(args$input, data.table = F, check.names = T) %>%
   mutate(
     ID = paste(X.chrom, chromEnd, strand, sep = "_"),
     RNAtype = case_when(
@@ -60,15 +75,12 @@ final = data.table::fread(file, data.table = F, check.names = T) %>%
     name = ifelse(name == "mxU", "U*", name)
   )
 
-table(final$name, final$RNAtype)
+# table(final$name, final$RNAtype)
 
-Nsites_by_mod = table(final$name, final$RNAtype) %>% 
-  as.data.frame.matrix() %>%
-  mutate(Modification = rownames(.), .before = 1)
-data.table::fwrite(Nsites_by_mod, file = paste0(outdir, "Number_of_sites_by_mod.tsv"), sep = "\t")
-
-
-polyA = final %>% filter(!grepl("hs_", X.chrom))
+# Nsites_by_mod = table(final$name, final$RNAtype) %>% 
+#   as.data.frame.matrix() %>%
+#   mutate(Modification = rownames(.), .before = 1)
+# data.table::fwrite(Nsites_by_mod, file = paste0(outdir, "Number_of_sites_by_mod.tsv"), sep = "\t")
 
 df_nsites = final %>% 
   group_by(name, RNAtype) %>%
@@ -87,19 +99,19 @@ lp = lapply(c("polyA RNA", "rRNA", "tRNA"), function(x) {
     theme(aspect.ratio = 8/nrow(df), axis.text.x = element_text(angle = 45, hjust = 1)) + 
     ggtitle(x) 
 })
-ggsave(wrap_plots(lp, nrow = 1), filename = paste0(outdir, "Integrated_barplot_num_of_sites.pdf"), width = 18, height = 5)
+ggsave(wrap_plots(lp, nrow = 1), filename = paste0(args$outdir, "/Integrated_barplot_num_of_sites.pdf"), 
+  width = 18, height = 5)
 
 
 # ================================================
 # 2. metagene plot
 # ================================================
-anno = data.table::fread(paste0(outdir, "../Illumina_combined_exon_region.tsv"), data.table = F)
-table(anno$region, anno$name)
-anno = anno %>% 
+
+anno = data.table::fread(args$anno, data.table = F) %>% 
   filter(!(X.chrom == "chrY")) %>%
   mutate(ID = paste(X.chrom, chromEnd, strand, sep = "_"))
 
-## Fig6C
+## Fig11C
 p2_0 = ggplot(anno %>% mutate(name = factor(name, levels = c("I", "m5C", "m6A", "Y"))), aes(x = name, fill = region)) + 
   geom_bar(stat = "count", position = "fill") + 
   scale_x_discrete(expand = c(0, 0)) + 
@@ -108,9 +120,9 @@ p2_0 = ggplot(anno %>% mutate(name = factor(name, levels = c("I", "m5C", "m6A", 
   xlab(NULL) + ylab("Proportion of sites (%)") + 
   theme_bw() + 
   theme(aspect.ratio = 2, legend.position = "top")
-ggsave(p2_0, filename = paste0(outdir, "Integrated_region_proportion.pdf"), width = 4, height = 5)
+ggsave(p2_0, filename = paste0(args$outdir, "/Integrated_region_proportion.pdf"), width = 4, height = 5)
 
-## Fig6D
+## Fig11D
 p2 = ggplot(anno %>% filter(region == "Exonic"), aes(rel_location, fill = name, color = name)) + 
   geom_density() + 
   geom_vline(xintercept = c(1,2), color = "gray") + 
@@ -122,25 +134,10 @@ p2 = ggplot(anno %>% filter(region == "Exonic"), aes(rel_location, fill = name, 
   theme_classic() + 
   theme(aspect.ratio = 1) + 
   ggtitle("polyA RNA")
-ggsave(p2, filename = paste0(outdir, "Integrated_metagene.pdf"), width = 4, height = 5)
+ggsave(p2, filename = paste0(args$outdir, "/Integrated_metagene.pdf"), width = 4, height = 5)
 
 
-## peak around stop codon
-anno = anno %>% mutate(dis2stop = end - utr5_len - cds_len)
-ggplot(anno %>% filter(region == "Exonic"), aes(dis2stop, fill = name, color = name)) + 
-  geom_bar(stat = "count") + 
-  scale_color_manual(values = mod_color) + 
-  coord_cartesian(xlim = c(-250, 250)) + 
-  labs(color = "Modification", fill = "Modification") + 
-  scale_fill_manual(values = scales::alpha(mod_color, 0.2)) + 
-  xlab("Distance to stop codon") + ylab("Number of sites") + 
-  theme_classic() + 
-  ggtitle("polyA RNA") + 
-  facet_wrap(~name, ncol = 2, scales = "free_y")
-
-
-
-## plot mean frequency (Fig6F)
+## plot mean frequency (Fig11F)
 anno = anno %>% mutate(frequency = final$frequency[match(ID, final$ID)])
 ggplot(anno, aes(rel_location, frequency, color = name)) +
   geom_smooth(method = "gam", formula = y ~ s(x, k = 20), linewidth = 1) + 
@@ -153,4 +150,4 @@ ggplot(anno, aes(rel_location, frequency, color = name)) +
   theme_classic() + 
   theme(aspect.ratio = 1, legend.position = "top") + 
   ggtitle("polyA RNA")
-ggsave(filename = paste0(outdir, "Mean_ratio_along_transripts.pdf"), width = 4, height = 5)
+ggsave(filename = paste0(args$outdir, "/Mean_ratio_along_transripts.pdf"), width = 4, height = 5)
