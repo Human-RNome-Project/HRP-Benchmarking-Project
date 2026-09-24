@@ -1,9 +1,13 @@
 # Processing of Short-Read Sequencing Data (HRP_B_007_033) Pipeline
 
 # Data Download Instructions
-In this step, we will download the raw data files generated directly by the sequencing machines.
-1. Open your web browser and navigate to the project's data repository: https://doi.org/10.25585/DOE-HRP/3377574.
-2. Follow the instructions on the portal under “Raw data” to download the raw Short-Read Sequencing files (typically .fastq format). Save these files into a dedicated directory on your local machine or high-performance computing (HPC) cluster.
+We will begin by downloading the SRS raw sequencing data based on the metadata available from the [DOE Data Explorer](https://doi.org/10.25585/DOE-HRP/3377574).
+
+1. Open the **Raw Data** tab, followed by the **Metadata** tab, and download `HRP_Metadata_A_LRS.tsv`. In the metadata table, select samples with `mRNA` in the `Sample type` column and either `HRP_B_007` or `HRP_B_033` in the `submission_id` column.
+
+2. The `HRP_B_007` dataset was generated using GLORI. Samples `HRP_B_007_1`, `HRP_B_007_2`, and `HRP_B_007_3` represent three mRNA replicates. Read 1 (R1) corresponds to the sense strand of the transcripts.
+
+3. The `HRP_B_033` dataset was generated using CAM-seq but was analyzed using the GLORI pipeline. Sample `HRP_B_033_1` is an untreated input library and is not used in the current analysis. Samples `HRP_B_033_2` and `HRP_B_033_3` represent two mRNA replicates. Read 2 (R2) corresponds to the sense strand of the transcripts. The 10-nt UMI at the 5′ end of each read must be removed before read mapping.
 
 # Requirements & Setup
 
@@ -14,7 +18,7 @@ conda env create -f GLORI_pipeline.yml
 conda activate GLORI_pipeline
 ```
 
-You will also need the GLORI-DUO-tools scrips, which could be download from [GLORI-DUO-tools](https://github.com/ZedekiahZhou/GLORI-DUO-tools)
+You will also need the GLORI-DUO-tools scripts, which could be found as `GLORI-DUO-tools.zip`. You could also download it from [GLORI-DUO-tools](https://github.com/ZedekiahZhou/GLORI-DUO-tools)
 
 
 # Input
@@ -24,13 +28,13 @@ You will also need the GLORI-DUO-tools scrips, which could be download from [GLO
 
 # Workflow
 
-1. Prepare analysis pipeline and AG-converted reference for GLORI
+1. Step 1: Prepare analysis pipeline and AG-converted reference for GLORI
 
 First, download the raw reference genome and analysis pipeline
 
 ```sh
+unzip GLORI-DUO-tools.zip
 DUOdir='your_GLORI-DUO-tools_directory'
-git clone https://github.com/ZedekiahZhou/GLORI-DUO-tools.git
 
 refdir='your_reference_directory'
 curl -O https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/GRCh38.primary_assembly.genome.fa.gz
@@ -59,7 +63,7 @@ gtf="${refdir}/gencode.v49.annotation.AG_converted.gtf"
 gtf2="${refdir}/gencode.v49.annotation.gtf"
 ```
 
-2. Processing raw fastq files, mapping and call m6A using one command
+2. Step 2: Processing raw fastq files, mapping and call m6A using one command
 
 ```sh
 # For HRP_B_007, R1 is sense to trancripts
@@ -71,7 +75,7 @@ python ${DUOdir}/DUO.py --raw_fq ${rawfq} -o ${outdir} \
   --prx ${sam} \
   -f ${genome} -f2 ${genome2} -rvs ${rvsgenome} -Tf ${TfGenome} \
   -a ${anno} -ba ${baseanno} --gtf ${gtf} --gtf2 ${gtf2} \
-  -c 15 -C 5 -s 0.8 -r 0.1 -adp 0.05
+  -c 1 -C 0 -s 0 -r 0 -adp 1.1
 
 # For HRP_B_033, R2 is sense to transcripts; and the 10nt UMI in 5' ends should be clipped
 sam="HRP_B_033_2"
@@ -82,16 +86,27 @@ python ${DUOdir}/DUO.py --raw_fq ${rawfq} -o ${outdir} \
   --prx ${sam} \
   -f ${genome} -f2 ${genome2} -rvs ${rvsgenome} -Tf ${TfGenome} \
   -a ${anno} -ba ${baseanno} --gtf ${gtf} --gtf2 ${gtf2} \
-  -c 15 -C 5 -s 0.8 -r 0.1 -adp 0.05
+  -c 1 -C 0 -s 0 -r 0 -adp 1.1
 ```
 
-The output from GLORI-DUO-tools is a txt file `${sam}.totalm6A.FDR.csv.gz` recording detected m6A sites in each row. 
+The output from GLORI-DUO-tools is a txt file `${outdir}/03_Sites/${sam}.totalm6A.FDR.csv.gz` recording candidate m6A sites (all A sites with coverage >= 1) in each row. 
 
-3. Convert output of GLORI-DUO-tools to bedRmod
+3. Step 3: Filter sites and convert output of GLORI-DUO-tools to bedRmod
 
-Use R functions in `convert_to_bedRmod.R` to convert output of GLORI-DUO-tools to bedRmod, and also merge different replicates and methods into the final bedRmod. 
+```sh
+# seqMethod: GLORI or CAMseq
+Rscript convert_to_bedRmod.R -i ${outdir}/03_Sites/${sam}.totalm6A.FDR.csv.gz \
+  -o ${outdir} --seqMethod GLORI -m m6A
+```
 
 
 # Output
 
-A merged bedRmod file including m6A modifications from different methods, e.g., GLORI and CAM-seq
+A tab-separated bedRMod (`bedRModv2`) with `#key=value` metadata header for a single replicate `${outdir}/${sam}.bed`, with six additonal columns:
+
+- `nRep`: number of replicates that the site is detected, always `1` in the bedRmod for a single replicate
+- `repName`: name for each sample (replicate), seperate by ";" for multiple samples
+- `repScore`: score for each sample (replicate), seperate by ";" for multiple samples
+- `repCov`: coverage for each sample (replicate), seperate by ";" for multiple samples
+- `repFreq`: frequency for each sample (replicate), seperate by ";" for multiple samples
+- `method`: detection method for each sample (replicate), seperate by ";" for multiple samples
