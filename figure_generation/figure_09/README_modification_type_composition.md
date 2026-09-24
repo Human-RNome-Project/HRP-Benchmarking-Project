@@ -1,22 +1,24 @@
-# modification_type_composition.py
+# Modification type composition (original cell-based script)
 
-Analysis and figure-generation script for the **RNome** project: a multi-lab
-comparison of RNA modification calls from Oxford Nanopore (ONT) direct-RNA
-sequencing of GM12878 poly(A) RNA, rRNA, and tRNA. It loads per-site
-modification BED tables, annotates each modified site with a genomic feature,
-filters to a high-confidence call set (via an IVT control test and a composite
-confidence score), and produces the publication figures (modification-by-feature
-heatmap, poly(A) tail-length violins, and per-dataset PCA plots).
+This is the README for the **original** interactive analysis script,
+`modification_type_composition.py` — the cell-based (`#%%`) notebook for the
+**RNome** project: a multi-lab comparison of RNA modification calls from Oxford
+Nanopore (ONT) direct-RNA sequencing of GM12878 poly(A) RNA, rRNA and tRNA. It
+loads per-site modification BED tables, annotates each modified site with a
+genomic feature, filters to a high-confidence call set (via an IVT control test
+and a composite confidence score), and produces the publication figures
+(modification-by-feature heatmap, poly(A) tail-length violins, and per-dataset
+PCA plots).
 
 The script is written as a cell-based notebook (`#%%` cells) meant to be stepped
 through interactively (VS Code / Jupyter), **not** run end-to-end as a single
-`python` invocation.
-
----
+`python` invocation. (A refactored command-line version with an argument parser,
+manifest-driven inputs and no `dmode` dependency also exists — see
+`README.md` — but this README documents the original notebook as written.)
 
 ## What it does
 
-The pipeline runs in numbered steps (each an `#%%` cell):
+The pipeline runs in numbered steps, each an `#%%` cell:
 
 | Step | Purpose |
 |------|---------|
@@ -37,9 +39,7 @@ The pipeline runs in numbered steps (each an `#%%` cell):
 | 16 | Re-imports + `pca_plot()` helper (samples × positions matrix → PCA). |
 | 17–19 | **Figure 1S PCA** plots for the polyA-RNA, rRNA, and tRNA datasets. |
 
----
-
-## High-confidence site definition (Step 11)
+### High-confidence site definition (Step 11)
 
 A site is kept if **either**:
 
@@ -48,13 +48,10 @@ A site is kept if **either**:
 
 **and**, in both cases, has solid support: `coverage ≥ 30` **and** `frequency ≥ 3%`.
 
----
+## Enviroment setup
 
-## Requirements
-
-Python 3.10+ (uses `dict[str, str]` / `list[...] | None` syntax).
-
-**Packages**
+Python 3.10+ is required (the script uses `dict[str, str]` / `list[...] | None`
+syntax). The following packages are needed:
 
 ```
 pandas
@@ -73,17 +70,33 @@ joblib
 dmode          # in-house project helper package (metagene / gene-body utilities)
 ```
 
-An **in-house `dmode` package** is required for `dmode.metagene_plot.prepare_gene_body_coverage()`.
+The **in-house `dmode` package** is required for
+`dmode.metagene_plot.prepare_gene_body_coverage()`; it is not available on
+PyPI/conda and must be installed from the project's own source. (The refactored
+CLI version removes this dependency.)
 
-Fonts: the theme targets **Helvetica/Arial**; without them matplotlib falls back to DejaVu Sans.
+Fonts: the theme targets **Helvetica/Arial**; without them matplotlib falls back
+to DejaVu Sans.
 
----
+### Using Conda
 
-## Inputs
+There is no packaged `environment.yml` for the original notebook (chiefly because
+`dmode` is not on any public channel). A minimal environment can be created
+manually, after which `dmode` is installed separately from its own source:
 
-All paths are **hard-coded** and point at the project's storage (a mix of
-`/global/cfs/cdirs/m5243/...` on NERSC and `/home/stefan/Synology/...`). You will
-need to edit these for your environment. Expected inputs:
+```bash
+conda create -n rnome python=3.10 pandas polars numpy matplotlib seaborn \
+    pyranges scipy statsmodels scikit-learn upsetplot tqdm pyarrow joblib
+conda activate rnome
+# then install the in-house dmode package from the project source, e.g.:
+# pip install /path/to/dmode
+```
+
+## Input data
+
+All paths are **hard-coded** in the script and point at the project's storage (a
+mix of `/global/cfs/cdirs/m5243/...` on NERSC and `/home/stefan/Synology/...`).
+You will need to edit these for your environment. Expected inputs:
 
 - **GTF annotation** — `gencode.v49.primary_assembly.annotation.gtf`
 - **Combined ONT BED** — `ONT_polyARNA_rRNA_combined.filtered.bed`
@@ -99,9 +112,21 @@ need to edit these for your environment. Expected inputs:
 
 Datasets are identified by codes like `HRP_A_007_1` (lab / donor / replicate).
 
----
+## Usage
 
-## Outputs
+Run interactively cell by cell (do **not** run the whole file at once).
+Recommended order:
+
+1. Run Steps 0–1 to set up imports and the plotting theme.
+2. Run Steps 2–10 to build and test the annotated table
+   (slow: has per-row annotation loops and a large IVT join).
+3. **Checkpoint:** after Step 10 the table is written to
+   `combined_labs_with_ivt_fisher.csv`. On later runs you can skip Steps 6–10 and
+   read that CSV back in (Step 11) instead of recomputing.
+4. Run Steps 11–13 for the heatmap, 14–15 for the tail-length violins, and
+   16–19 for the PCA figures.
+
+## Output
 
 - `combined_labs_with_ivt_fisher.csv` — checkpoint of the fully annotated + tested
   table (write once, then re-read to resume from Step 11 without recomputing).
@@ -113,24 +138,7 @@ Datasets are identified by codes like `HRP_A_007_1` (lab / donor / replicate).
   - `Figure1S_rRNA_PCA_mod_frequency.pdf`
   - `Figure1S_tRNA_PCA_mod_frequency.pdf`
 
----
-
-## Usage
-
-Run interactively cell by cell. Recommended order:
-
-1. Run Steps 0–1 to set up imports and the plotting theme.
-2. Run Steps 2–10 to build and test the annotated table
-   (slow: has per-row annotation loops and a large IVT join).
-3. **Checkpoint:** after Step 10 the table is written to
-   `combined_labs_with_ivt_fisher.csv`. On later runs you can skip Steps 6–10 and
-   read that CSV back in (Step 11) instead of recomputing.
-4. Run Steps 11–13 for the heatmap, 14–15 for the tail-length violins, and
-   16–19 for the PCA figures.
-
----
-
-## Notes & caveats
+## Importent Notes
 
 These are carried over from comments in the script and are worth checking before
 relying on results:
