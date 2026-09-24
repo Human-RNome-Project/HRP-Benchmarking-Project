@@ -1,4 +1,4 @@
-# Processing of BID-seq Short-Read Sequencing Data (He_pU_input / He_pU_treat_rep1 / He_pU_treat_rep2)
+# Processing of BID-seq Short-Read Sequencing Data (pU_input / pU_treat_rep1 / pU_treat_rep2)
 
 End-to-end workflow for the pseudouridine (&Psi;) RNome samples of the Human RNome Project,
 from raw FASTQ files to a bedRMod file.
@@ -8,14 +8,14 @@ from raw FASTQ files to a bedRMod file.
 # Data Download Instructions
 
 1. Open the project's data repository and follow the instructions under "Raw data".
-2. Download the paired-end Illumina NovaSeq X FASTQ files listed below into a dedicated
+2. Download the paired-end Illumina NovaSeq X FASTQ files listed below from the "Short-read Sequencing" folder into a dedicated
    directory on your machine or HPC cluster (referred to as `${rawdir}` below).
 
 | HRP sample name    | Library      | Raw FASTQ files                                                                     |
 | ------------------ | ------------ | ----------------------------------------------------------------------------------- |
-| `He_pU_input`      | untreated    | `CHe-MA-42s-YSL-04_S4_L002_R1_001.fastq.gz`, `CHe-MA-42s-YSL-04_S4_L002_R2_001.fastq.gz` |
-| `He_pU_treat_rep1` | BID-treated  | `CHe-MA-42s-YSL-07_S7_L002_R1_001.fastq.gz`, `CHe-MA-42s-YSL-07_S7_L002_R2_001.fastq.gz` |
-| `He_pU_treat_rep2` | BID-treated  | `CHe-MA-42s-YSL-08_S8_L002_R1_001.fastq.gz`, `CHe-MA-42s-YSL-08_S8_L002_R2_001.fastq.gz` |
+| `pU_input`      | untreated    | `HRP_B_031_1_R1.fastq.gz`, `HRP_B_031_1_R2.fastq.gz` |
+| `pU_treat_rep1` | BID-treated  | `HRP_B_031_2_R1.fastq.gz`, `HRP_B_031_2_R2.fastq.gz` |
+| `pU_treat_rep2` | BID-treated  | `HRP_B_031_3_R1.fastq.gz`, `HRP_B_031_3_R2.fastq.gz` |
 
 Input RNA: poly(A)-selected, fragmented human mRNA. Platform: Illumina NovaSeq X, paired-end.
 
@@ -127,22 +127,22 @@ reference:
     star: /path/to/ref/star/GRCh38.release110
 
 samples:
-  He_pU_input:
+  pU_input:
     data:
-      - R1: /path/to/raw/CHe-MA-42s-YSL-04_S4_L002_R1_001.fastq.gz
-        R2: /path/to/raw/CHe-MA-42s-YSL-04_S4_L002_R2_001.fastq.gz
+      - R1: /path/to/raw/HRP_B_031_1_R1.fastq.gz
+        R2: /path/to/raw/HRP_B_031_1_R2.fastq.gz
     group: HRP_pU
     treated: false
-  He_pU_treat_rep1:
+  pU_treat_rep1:
     data:
-      - R1: /path/to/raw/CHe-MA-42s-YSL-07_S7_L002_R1_001.fastq.gz
-        R2: /path/to/raw/CHe-MA-42s-YSL-07_S7_L002_R2_001.fastq.gz
+      - R1: /path/to/raw/HRP_B_031_2_R1.fastq.gz
+        R2: /path/to/raw/HRP_B_031_2_R2.fastq.gz
     group: HRP_pU
     treated: true
-  He_pU_treat_rep2:
+  pU_treat_rep2:
     data:
-      - R1: /path/to/raw/CHe-MA-42s-YSL-08_S8_L002_R1_001.fastq.gz
-        R2: /path/to/raw/CHe-MA-42s-YSL-08_S8_L002_R2_001.fastq.gz
+      - R1: /path/to/raw/HRP_B_031_3_R1.fastq.gz
+        R2: /path/to/raw/HRP_B_031_3_R2.fastq.gz
     group: HRP_pU
     treated: true
 
@@ -243,15 +243,15 @@ bedRMod v2 file. It needs only a standard python >= 3.8 (no third-party packages
 # transcriptome-wide sites (GRCh38 coordinates)
 python convert_to_bedRmod.py \
     --input  workspace/filter_sites/genome.tsv.gz \
-    --output He_pU_mRNA.bedrmod \
-    --treated-samples He_pU_treat_rep1,He_pU_treat_rep2 \
+    --output pU_mRNA.bedrmod \
+    --treated-samples pU_treat_rep1,pU_treat_rep2 \
     --group HRP_pU --passed-only
 
 # rRNA sites, lifted from the 45S reference onto chromosome 21
 python convert_to_bedRmod.py \
     --input  workspace/filter_sites/genes.tsv.gz \
-    --output He_pU_rRNA.bedrmod \
-    --treated-samples He_pU_treat_rep1,He_pU_treat_rep2 \
+    --output pU_rRNA.bedrmod \
+    --treated-samples pU_treat_rep1,pU_treat_rep2 \
     --group HRP_pU --passed-only \
     --lift 'NC_000021.9:8433222-8446572=21:8433222:+'
 ```
@@ -275,8 +275,8 @@ per sample is required.
 
 # Output
 
-- `He_pU_mRNA.bedrmod` - &Psi; sites transcriptome-wide, GRCh38 coordinates.
-- `He_pU_rRNA.bedrmod` - &Psi; sites on the 45S pre-rRNA, reported on chromosome 21.
+- `pU_mRNA.bedrmod` - &Psi; sites transcriptome-wide, GRCh38 coordinates.
+- `pU_rRNA.bedrmod` - &Psi; sites on the 45S pre-rRNA, reported on chromosome 21.
 
 Header of the produced files:
 
