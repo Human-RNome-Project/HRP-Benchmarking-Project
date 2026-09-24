@@ -1,0 +1,31 @@
+# BID-seq configuration for the HRP pseudouridine RNome samples.
+# Paths below are the ones used on the UChicago midway3 cluster; adjust for your system.
+
+reference:
+  genes:
+    fa: /project/taopan/chenyou/temp/rRNA.fa
+  genome:
+    fa: /project/taopan/chenyou/genome/Homo_sapiens/GRCh38.fa
+    star: /project/taopan/chenyou/genome/Homo_sapiens/star/GRCh38.release110
+
+samples:
+  He_pU_input:
+    data:
+      - R1: /project/taopan/chenyou/temp/ch_data/bid-seq/CHe-MA-42s-YSL-04_S4_L002_R1_001.fastq.gz
+        R2: /project/taopan/chenyou/temp/ch_data/bid-seq/CHe-MA-42s-YSL-04_S4_L002_R2_001.fastq.gz
+    group: HRP_pU
+    treated: false
+  He_pU_treat_rep1:
+    data:
+      - R1: /project/taopan/chenyou/temp/ch_data/bid-seq/CHe-MA-42s-YSL-07_S7_L002_R1_001.fastq.gz
+        R2: /project/taopan/chenyou/temp/ch_data/bid-seq/CHe-MA-42s-YSL-07_S7_L002_R2_001.fastq.gz
+    group: HRP_pU
+    treated: true
+  He_pU_treat_rep2:
+    data:
+      - R1: /project/taopan/chenyou/temp/ch_data/bid-seq/CHe-MA-42s-YSL-08_S8_L002_R1_001.fastq.gz
+        R2: /project/taopan/chenyou/temp/ch_data/bid-seq/CHe-MA-42s-YSL-08_S8_L002_R2_001.fastq.gz
+    group: HRP_pU
+    treated: true
+
+forward_stranded: false
