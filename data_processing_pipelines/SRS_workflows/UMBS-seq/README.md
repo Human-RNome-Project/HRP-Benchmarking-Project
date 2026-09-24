@@ -1,4 +1,4 @@
-# Processing of UMBS-seq (UBS-seq) Short-Read Sequencing Data (He_m5C_UMBS_seq_rep1 / rep2)
+# Processing of UMBS-seq (UBS-seq) Short-Read Sequencing Data (m5C_UMBS_seq_rep1 / rep2)
 
 End-to-end workflow for the m5C RNome samples of the Human RNome Project, from raw FASTQ
 files to a bedRMod file.
@@ -8,12 +8,12 @@ files to a bedRMod file.
 # Data Download Instructions
 
 1. Open the project's data repository and follow the instructions under "Raw data".
-2. Download the paired-end Illumina NovaSeq X FASTQ files below into `${rawdir}`.
+2. Download the paired-end Illumina NovaSeq X FASTQ files from the "Short-read Sequencing" folder below into `${rawdir}`.
 
 | HRP sample name         | Internal ID | Raw FASTQ files                                                        |
 | ----------------------- | ----------- | ---------------------------------------------------------------------- |
-| `He_m5C_UMBS_seq_rep1`  | `YSL-5`     | `He_m5C_UMBS_seq_rep1_R1.fastq.gz`, `He_m5C_UMBS_seq_rep1_R2.fastq.gz` |
-| `He_m5C_UMBS_seq_rep2`  | `YSL-6`     | `He_m5C_UMBS_seq_rep2_R1.fastq.gz`, `He_m5C_UMBS_seq_rep2_R2.fastq.gz` |
+| `m5C_UMBS_seq_rep1`  | `YSL-5`     | `HRP_B_032_1_R1.fastq.gz`, `HRP_B_032_1_R2.fastq.gz` |
+| `m5C_UMBS_seq_rep2`  | `YSL-6`     | `HRP_B_032_2_R1.fastq.gz`, `HRP_B_032_2_R2.fastq.gz` |
 
 The two libraries are technical replicates of UMBS-treated (bisulfite-converted) human mRNA.
 Throughout the pipeline the samples are referred to by their internal IDs `YSL-5` and `YSL-6`,
@@ -239,14 +239,14 @@ p_val, ID` (`ID` = `Chrom_Pos`, the key used for the intersection).
 ```sh
 python convert_to_bedRmod.py \
     --input m5C_sites_intersection_YSL-5_YSL-6_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
-    --output He_m5C_UMBS_seq.bedrmod \
+    --output m5C_UMBS_seq.bedrmod \
     --combine-samples
 
 # per replicate
 python convert_to_bedRmod.py --input m5C_sites_YSL-5_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
-    --output He_m5C_UMBS_seq_rep1.bedrmod
+    --output m5C_UMBS_seq_rep1.bedrmod
 python convert_to_bedRmod.py --input m5C_sites_YSL-6_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
-    --output He_m5C_UMBS_seq_rep2.bedrmod
+    --output m5C_UMBS_seq_rep2.bedrmod
 ```
 
 Conventions written by the script:
@@ -263,8 +263,8 @@ Conventions written by the script:
 
 # Output
 
-- `He_m5C_UMBS_seq.bedrmod` - m5C sites called in both replicates (high-confidence set).
-- `He_m5C_UMBS_seq_rep1.bedrmod`, `He_m5C_UMBS_seq_rep2.bedrmod` - per-replicate sites.
+- `m5C_UMBS_seq.bedrmod` - m5C sites called in both replicates (high-confidence set).
+- `m5C_UMBS_seq_rep1.bedrmod`, `m5C_UMBS_seq_rep2.bedrmod` - per-replicate sites.
 
 Header of the produced files:
 
