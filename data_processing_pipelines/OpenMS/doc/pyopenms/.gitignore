@@ -1,9 +1,0 @@
-.idea
-**/*.pyc
-.DS_Store
-docs/source/_autosummary/*
-docs/source/apidocs/_autosummary/*
-docs/source/_build/
-docs/build/
-venv
-build/

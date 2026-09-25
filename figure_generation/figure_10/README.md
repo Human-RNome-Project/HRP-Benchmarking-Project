@@ -19,7 +19,7 @@ The rRNA panel rendering logic is split into three dedicated plotting helpers:
 
 - `figure10b.py`
   - Main entry script for the rRNA panels.
-  - Loads the GM12878 SRS consensus BED file and compares it against the Taoka reference BED file.
+  - Loads the GM12878 SRS consensus BED file and compares it against a reference file.
   - Calls the `plot_18`, `plot_28`, and `plot_5_8` functions to render the three rRNA maps.
 
 - `figure10c.py`
