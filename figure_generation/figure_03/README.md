@@ -53,7 +53,7 @@ The scripts require Python 3.11 and the following libraries:
 
 ## Expected inputs
 
-The scripts expect following excel sheets to be available:
+The scripts expect following excel sheets to be available. The files are availabel at ######to be included#######:
 
 - `HRP-C-003_intermediate_results.xlsx`
 - `HRP-C-004_005_006_007_008_0010_intermediate_results.xlsx`
