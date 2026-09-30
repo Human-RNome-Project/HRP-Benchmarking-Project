@@ -1,0 +1,40 @@
+# Conda environment for the ORIGINAL cell-based notebook
+# (modification_type_composition.py, run interactively via #%% cells).
+#
+# Create:    conda env create -f environment_original.yml
+# Activate:  conda activate rnome
+#
+# Version pins matter here:
+#   * pandas is held < 3.0 because pyranges (0.0.x) relies on the classic
+#     "object" string dtype; pandas 3.x's new inferred "str" dtype breaks the
+#     PyRanges left-join used for gene-body annotation (Steps 4 / 11).
+#   * numpy is held < 2.1 for binary compatibility with the pinned pyranges /
+#     scipy / scikit-learn wheels.
+#
+# The in-house "dmode" package (used for
+# dmode.metagene_plot.prepare_gene_body_coverage) is installed from pip; adjust
+# the requirement below if the project publishes it under a different name or
+# from a private index / VCS URL, e.g.:
+#     - dmode @ git+https://<host>/<org>/dmode.git
+name: rnome
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - pip
+  - pandas>=2.1,<3.0
+  - numpy>=1.24,<2.1
+  - polars>=1.0
+  - scipy>=1.10
+  - statsmodels>=0.14
+  - scikit-learn>=1.3
+  - matplotlib>=3.7
+  - seaborn>=0.13
+  - pyarrow>=14
+  - tqdm>=4.65
+  - joblib>=1.3
+  - pip:
+      - pyranges==0.0.129
+      - upsetplot
+      - dmode
