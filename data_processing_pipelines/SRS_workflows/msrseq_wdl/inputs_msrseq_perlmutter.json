@@ -17,67 +17,67 @@
   "msrseq_pipeline.convert_runtime_minutes": 30,
   "msrseq_pipeline.samples": [
     {
-      "sample_id": "TP-AB-19s-R-Con_S12_L008_L1_bc8_GGTA",
+      "sample_id": "HRP_B_012_tRNA_005",
       "treatment": "HRPC_ctrl",
       "replicate": 1,
       "barcode": "bc8",
-      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/PAN_T/MSRseq_tRNA/raw/NovaSeqX_GM12878-1_MSRseq_260211_R1/L1_bc8_GGTA_2.txt.gz"
+      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/HRP_B_012/MSRseq_tRNA/raw/NovaSeqX_GM12878-1_MSRseq_260211_R1/L1_bc8_GGTA_2.txt.gz"
     },
     {
-      "sample_id": "TP-AB-19s-R-Con_S12_L008_L1_bc9_GACT",
+      "sample_id": "HRP_B_012_tRNA_007",
       "treatment": "HRPC_ctrl",
       "replicate": 2,
       "barcode": "bc9",
-      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/PAN_T/MSRseq_tRNA/raw/NovaSeqX_GM12878-2_MSRseq_260211_R2/L1_bc9_GACT_2.txt.gz"
+      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/HRP_B_012/MSRseq_tRNA/raw/NovaSeqX_GM12878-2_MSRseq_260211_R2/L1_bc9_GACT_2.txt.gz"
     },
     {
-      "sample_id": "TP-AB-19s-R-Con_S12_L008_L1_bc10_ACCA",
+      "sample_id": "HRP_B_012_tRNA_009",
       "treatment": "HRPC_ctrl",
       "replicate": 3,
       "barcode": "bc10",
-      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/PAN_T/MSRseq_tRNA/raw/NovaSeqX_GM12878-3_MSRseq_260211_R3/L1_bc10_ACCA_2.txt.gz"
+      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/HRP_B_012/MSRseq_tRNA/raw/NovaSeqX_GM12878-3_MSRseq_260211_R3/L1_bc10_ACCA_2.txt.gz"
     },
     {
-      "sample_id": "TP-AB-19s-R-BS_S13_L008_L1_bc8_GGTA",
+      "sample_id": "HRP_B_012_tRNA_004",
       "treatment": "HRPC_BS",
       "replicate": 1,
       "barcode": "bc8",
-      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/PAN_T/MSRseq-BS_tRNA/raw/NovaSeqX_GM12878-1_MSRseq-BS_260211_R1/L1_bc8_GGTA_2.txt.gz"
+      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/HRP_B_012/MSRseq-BS_tRNA/raw/NovaSeqX_GM12878-1_MSRseq-BS_260211_R1/L1_bc8_GGTA_2.txt.gz"
     },
     {
-      "sample_id": "TP-AB-19s-R-BS_S13_L008_L1_bc9_GACT",
+      "sample_id": "HRP_B_012_tRNA_006",
       "treatment": "HRPC_BS",
       "replicate": 2,
       "barcode": "bc9",
-      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/PAN_T/MSRseq-BS_tRNA/raw/NovaSeqX_GM12878-2_MSRseq-BS_260211_R2/L1_bc9_GACT_2.txt.gz"
+      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/HRP_B_012/MSRseq-BS_tRNA/raw/NovaSeqX_GM12878-2_MSRseq-BS_260211_R2/L1_bc9_GACT_2.txt.gz"
     },
     {
-      "sample_id": "TP-AB-19s-R-BS_S13_L008_L1_bc10_ACCA",
+      "sample_id": "HRP_B_012_tRNA_008",
       "treatment": "HRPC_BS",
       "replicate": 3,
       "barcode": "bc10",
-      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/PAN_T/MSRseq-BS_tRNA/raw/NovaSeqX_GM12878-3_MSRseq-BS_260211_R3/L1_bc10_ACCA_2.txt.gz"
+      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/HRP_B_012/MSRseq-BS_tRNA/raw/NovaSeqX_GM12878-3_MSRseq-BS_260211_R3/L1_bc10_ACCA_2.txt.gz"
     },
     {
-      "sample_id": "TP-AB-19s-R-CBH_S14_L008_L1_bc8_GGTA",
+      "sample_id": "HRP_B_012_tRNA_001",
       "treatment": "HRPC_CBH",
       "replicate": 1,
       "barcode": "bc8",
-      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/PAN_T/MSRseq-CBH_tRNA/raw/NovaSeqX_GM12878-1_MSRseq-CBH_260211_R1/L1_bc8_GGTA_2.txt.gz"
+      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/HRP_B_012/MSRseq-CBH_tRNA/raw/NovaSeqX_GM12878-1_MSRseq-CBH_260211_R1/L1_bc8_GGTA_2.txt.gz"
     },
     {
-      "sample_id": "TP-AB-19s-R-CBH_S14_L008_L1_bc9_GACT",
+      "sample_id": "HRP_B_012_tRNA_003",
       "treatment": "HRPC_CBH",
       "replicate": 2,
       "barcode": "bc9",
-      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/PAN_T/MSRseq-CBH_tRNA/raw/NovaSeqX_GM12878-2_MSRseq-CBH_260211_R2/L1_bc9_GACT_2.txt.gz"
+      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/HRP_B_012/MSRseq-CBH_tRNA/raw/NovaSeqX_GM12878-2_MSRseq-CBH_260211_R2/L1_bc9_GACT_2.txt.gz"
     },
     {
-      "sample_id": "TP-AB-19s-R-CBH_S14_L008_L1_bc10_ACCA",
+      "sample_id": "HRP_B_012_tRNA_002",
       "treatment": "HRPC_CBH",
       "replicate": 3,
       "barcode": "bc10",
-      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/PAN_T/MSRseq-CBH_tRNA/raw/NovaSeqX_GM12878-3_MSRseq-CBH_260211_R3/L1_bc10_ACCA_2.txt.gz"
+      "fastq_read2": "/global/cfs/cdirs/m5243/raw_data/HRP_B_012/MSRseq-CBH_tRNA/raw/NovaSeqX_GM12878-3_MSRseq-CBH_260211_R3/L1_bc10_ACCA_2.txt.gz"
     }
   ]
 }
