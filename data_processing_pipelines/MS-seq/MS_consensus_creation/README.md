@@ -1,19 +1,9 @@
 # MS-seq Consensus creation
 This folder contains the command-line pipeline for building a consensus bedrmod file from multiple mass-spectrometry (OpenMS) sample bedrmod files. It loads each sample, applies score/frequency/mapping filters, merges fragment positions within each sample, and then combines all samples into a single consensus set of modification sites.
+The thresholds used in our paper are the default values of the pipeline.
 
 ## Enviroment setup
-The pipeline requires pandas.
 
-### Using Conda
-1. Ensure you have Conda (or Miniconda/Mamba) installed.
-2. Create the environment by running:
-   ```bash
-   conda env create -f environment.yml
-   ```
-3. Activate the environment:
-   ```bash
-   conda activate MS-seq_consensus_creation
-   ```
 ### Using Docker
 Start this from MS-seq main directory.
 ```bash
@@ -21,23 +11,10 @@ docker build -t hrp-ms-seq:latest .
 ```
 
 ## Input data
-
-Put all sample files for a single consensus run into one folder. The script automatically discovers every file ending in `.bed` or `.bedrmod` inside that folder and uses them all as samples.
+This analysis step depends on the outputs of the [`./NASE_rRNA/`](NASE_rRNA/) and [`./NASE_tRNA/`](NASE_tRNA/) workflows. 
+Place all sample files you want to merge into one folder. The script automatically discovers every file ending in `.bed` or `.bedrmod` inside that folder and uses them all as samples.
 
 ## Usage
-
-```bash
-python consensus_creation_main.py \
-    --input-folder <path> \
-    --out-file <path> \
-    [--min-samples INT] \
-    [--q-score FLOAT] \
-    [--freq FLOAT] \
-    [--min-overlap INT] \
-    [--unique-mapping | --no-unique-mapping] \
-    [--tRNA]
-```
-or
 
 ```bash
 docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
@@ -67,20 +44,29 @@ docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
 
 ### Examples
 
-**rRNA run** (unique mapping required, default settings):
+**rRNA run** (unique mapping was applied in the paper):
 ```bash
-python consensus_creation_main.py \
-    --input-folder /path/to/rRNA_data/ \
-    --out-file test_consensus_rRNA.bed \
-    --min-samples 1 --q-score 0.05 --freq 10 --min-overlap 100 --unique-mapping
+docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
+    --input-folder /data/rRNA_data \
+    --out-file /data/consensus_rRNA.bed \
+    --min-samples 1 \
+    --q-score 0.05 \
+    --freq 10 \
+    --min-overlap 100 \
+    --unique-mapping
 ```
 
-**tRNA run** (unique mapping not required, base-end trimming applied):
+**tRNA run** (unique mapping was not applied for the paper, base-end trimming applied):
 ```bash
-python consensus_creation_main.py \
-    --input-folder /path/to/tRNA_data/ \
-    --out-file test_consensus_tRNA.bed \
-    --min-samples 1 --q-score 0.05 --freq 10 --min-overlap 100 --no-unique-mapping --tRNA
+docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
+    --input-folder /data/tRNA_data \
+    --out-file /data/consensus_tRNA.bed \
+    --min-samples 1 \
+    --q-score 0.05 \
+    --freq 10 \
+    --min-overlap 100 \
+    --no-unique-mapping \
+    --tRNA
 ```
 
 ## Output

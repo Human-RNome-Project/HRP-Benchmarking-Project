@@ -1,6 +1,6 @@
 # MS-seq Analysis
 
-This directory contains the pipeline modules used to process MS-seq data and identify post-transcriptional RNA modifications across the RNA biotypes rRNA and tRNA.
+This directory contains the pipeline modules used to process MS-seq data and identify post-transcriptional RNA modifications across the RNA biotypes rRNA and tRNA. In contrast to the other methods MS-seq technology was not used to analyze poly(A) RNA sequences. With the current technology, the analyzed fragments are to small to align them truthfully to big references, like the whole human transcriptome.
 
 The pipeline is organized into two distinct layers, the Open-MS spectra to sequence mapping and the Consensus creation pipeline, combining aligned fragments and different samples to a consensus modification map.
 
@@ -66,11 +66,11 @@ docker build -t hrp-ms-seq:latest .
 ```bash
 docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
     /data/sample.mzML /data/ref.fasta \
-    --precursor-tolerance 10 --product-tolerance 20 --output-dir /data/results
+    --precursor-tolerance <precursor-tolerance> --product-tolerance <product-tolerance> --output-dir /data/results
 
 docker run --rm -v "$PWD":/data hrp-ms-seq:latest trna \
     /data/sample.mzML /data/ref.fasta \
-    --precursor-tolerance 10 --product-tolerance 20 --output-dir /data/results
+    --precursor-tolerance <precursor-tolerance> --product-tolerance <product-tolerance> --output-dir /data/results
 ```
 
 3. **Filtering and Consensus Modifications:** Run the command below or follow the detailed instructions in the [`MS_consensus_creation/README.md`](MS_consensus_creation/README.md) to extract your modifications.
@@ -82,3 +82,19 @@ docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
 5. **Help:**
 Run `docker run --rm hrp-ms-seq:latest --help` for the full usage message, or pass `bash` as the mode for an interactive shell.
 
+
+## Paper Data-Availability
+All analyzed samples are available under https://rnome.jgi.lbl.gov/mass_spectrometry/. Corresponding refrences are available under "Add link when available". Which reference, percursor/product-tolerance and further adaptations to the .ini files were used, is documented in the metadatasheet under https://rnome.jgi.lbl.gov/metadata.html HRP_C. Our pipeline only supports .mzML files, in case of other formats (e.g. .mzXML) we refer to the msconvert function of proteowizard (conda install bioconda::proteowizard or https://proteowizard.sourceforge.io/ or https://github.com/ProteoWizard/pwiz).
+For the MS-seq Analysis following samples were used:
+
+**rRNA**
+- HRP_C_001_1
+- HRP_C_002_1
+- HRP_C_005_4
+- HRP_C_006_4
+- HRP_C_014_1
+
+**tRNA**
+- HRP_C_001_3
+- HRP_C_008_4
+- HRP_C_015_2

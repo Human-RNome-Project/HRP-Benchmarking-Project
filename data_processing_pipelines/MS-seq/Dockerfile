@@ -34,5 +34,10 @@ RUN chmod +x /usr/local/bin/entrypoint.sh \
     NASE_tRNA/run_tRNA_analysis.py \
     MS_consensus_creation/consensus_creation_main.py
 
+RUN ln -s /opt/hrp-ms-seq/NASE_rRNA/run_rRNA_analysis.py /usr/local/bin/run_rRNA_analysis \
+    && ln -s /opt/hrp-ms-seq/NASE_tRNA/run_tRNA_analysis.py /usr/local/bin/run_tRNA_analysis \
+    && ln -s /opt/hrp-ms-seq/MS_consensus_creation/consensus_creation_main.py /usr/local/bin/ms-consensus
+    
+
 ENTRYPOINT ["entrypoint.sh"]
 CMD ["--help"]

@@ -31,8 +31,8 @@ The workflow expects:
 docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
     <input.mzML> \
     <input.fasta> \
-    --precursor-tolerance 10 \
-    --product-tolerance 20 \
+    --precursor-tolerance <precursor-tolerance> \
+    --product-tolerance <product-tolerance> \
     --output-dir <./results> \
     --decoy-ini /data/decoy_database.ini \
     --nase-ini /data/NASE.ini \
