@@ -3,7 +3,7 @@ set -euo pipefail
 
 # =============================================================================
 # UMBS-seq (UBS-seq) core pipeline for the HRP m5C RNome samples
-#   m5C_UMBS_seq_rep1 = YSL-5 , m5C_UMBS_seq_rep2 = YSL-6
+#   m5C_UMBS_seq_rep1 = YSL-5 (HRP_B_032_1), m5C_UMBS_seq_rep2 = YSL-6 (HRP_B_032_2)
 #
 # Reproduces 02_core_pipeline.ipynb as a standalone script.
 # Steps: trim -> map -> mark_duplicates -> dedup -> split_refs -> dedup_filter
@@ -35,11 +35,11 @@ Usage: $0 [options]
   --start-from STEP   resume from a step (default: trim)
   --stop-after STEP   stop after a step (default: run to the end)
                       steps: ${STEPS[*]}
-  --sample SAMPLE     run a single sample (e.g. YSL-5)
+  --sample SAMPLE     run a single sample (e.g. HRP_B_032_1, HRP_B_032_2)
   --threads N         number of threads (default: all cores)
   --index PATH        hisat-3n index base path
   --ref PATH          reference FASTA used for the index
-  --data-dir PATH     directory holding {SAMPLE}_R1.fq.gz / _R2.fq.gz
+  --data-dir PATH     directory holding {SAMPLE}_R1.fastq.gz / _R2.fastq.gz
   -h, --help
 USAGE
     exit 0
@@ -81,8 +81,8 @@ step_trim() {
             -u 5 -U 5 --rename='{id}_{r1.cut_prefix}{r2.cut_prefix}' \
             --too-short-output=trim/${S}_R1.fa_short \
             --too-short-paired-output=trim/${S}_R2.fa_short \
-            -o trim/${S}_R1.fq.gz -p trim/${S}_R2.fq.gz \
-            ${DATA_DIR}/${S}_R1.fq.gz ${DATA_DIR}/${S}_R2.fq.gz \
+            -o trim/${S}_R1.fastq.gz -p trim/${S}_R2.fastq.gz \
+            ${DATA_DIR}/${S}_R1.fastq.gz ${DATA_DIR}/${S}_R2.fastq.gz \
             > trim/${S}.report
         log "trim done: ${S}"
     done
@@ -95,8 +95,8 @@ step_map() {
         hisat-3n --index ${HISAT3N_INDEX} -p ${THREADS} \
             --base-change C,T --mp 8,2 --no-spliced-alignment \
             --summary-file map/${S}.summary --new-summary \
-            -1 trim/${S}_R1.fq.gz -2 trim/${S}_R2.fq.gz \
-            --un-conc-gz map/${S}_R%.fq.gz \
+            -1 trim/${S}_R1.fastq.gz -2 trim/${S}_R2.fastq.gz \
+            --un-conc-gz map/${S}_R%.fastq.gz \
             -S map/${S}.sam
         samtools view -@ ${THREADS} -F4 -b map/${S}.sam \
           | samtools sort -@ ${THREADS} --write-index -O BAM -o map/${S}.bam -
