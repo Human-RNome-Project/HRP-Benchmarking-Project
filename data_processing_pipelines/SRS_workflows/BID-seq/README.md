@@ -1,6 +1,6 @@
 # Processing of BID-seq Short-Read Sequencing Data (pU_input / pU_treat_rep1 / pU_treat_rep2)
 
-End-to-end workflow for the pseudouridine (&Psi;) RNome samples of the Human RNome Project,
+End-to-end workflow for the pseudouridine (&Psi;) RNome polyA-selected samples of the Human RNome Project,
 from raw FASTQ files to a bedRMod file.
 
 ---
@@ -9,7 +9,7 @@ from raw FASTQ files to a bedRMod file.
 
 1. Open the project's data repository and follow the instructions under "Raw data".
 2. Download the paired-end Illumina NovaSeq X FASTQ files listed below from the "Short-read Sequencing" folder into a dedicated
-   directory on your machine or HPC cluster (referred to as `${rawdir}` below).
+   directory on your machine or HPC cluster.
 
 | HRP sample name    | Library      | Raw FASTQ files                                                                     |
 | ------------------ | ------------ | ----------------------------------------------------------------------------------- |
@@ -41,10 +41,15 @@ fastp, cutadapt, bowtie2, STAR, samtools, bedtools, UMICollapse and snakemake 7.
 ```sh
 # on a node with internet access
 module load apptainer          # if not available by default
+# if apptainer is not downloaded, download and install it here (https://apptainer.org/docs/admin/latest/installation.html)
 apptainer pull bidseq.sif docker://y9ch/bidseq
 
 # record the exact image that was used
 apptainer inspect bidseq.sif
+
+# activate image
+apptainer shell bidseq.sif
+
 ```
 
 ---
@@ -70,6 +75,7 @@ Two references are needed: the **genome** (for transcriptome-wide &Psi; calling)
 and therefore recovers the multi-copy 45S rDNA reads that are lost in genome mapping).
 
 ```sh
+mkdir your_reference_directory
 refdir='your_reference_directory'
 ```
 
@@ -78,6 +84,7 @@ refdir='your_reference_directory'
 Ensembl GRCh38 primary assembly with the release-110 annotation:
 
 ```sh
+# on your main directory/folder
 curl -O https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 curl -O https://ftp.ensembl.org/pub/release-110/gtf/homo_sapiens/Homo_sapiens.GRCh38.110.gtf.gz
 gunzip -c Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz > ${refdir}/GRCh38.fa
@@ -85,7 +92,7 @@ gunzip -c Homo_sapiens.GRCh38.110.gtf.gz               > ${refdir}/GRCh38.releas
 samtools faidx ${refdir}/GRCh38.fa
 
 STAR --runMode genomeGenerate --runThreadN 24 \
-     --genomeDir ${refdir}/star/GRCh38.release110 \
+     --genomeDir ${refdir}/GRCh38.release110 \
      --genomeFastaFiles ${refdir}/GRCh38.fa \
      --sjdbGTFfile ${refdir}/GRCh38.release110.gtf \
      --genomeSAindexNbases 14 \
@@ -116,7 +123,7 @@ build is needed. No `contamination` reference was used for these samples.
 
 ## 2. Write the configuration file
 
-Save the following as `data.yaml` (a copy is provided next to this README). Adjust the paths.
+Save the following as `data.yaml` (a copy is provided next to this README). Adjust the paths as needed according to your system.
 
 ```yaml
 reference:
@@ -124,7 +131,7 @@ reference:
     fa: /path/to/ref/rRNA.fa
   genome:
     fa: /path/to/ref/GRCh38.fa
-    star: /path/to/ref/star/GRCh38.release110
+    star: /path/to/ref/GRCh38.release110
 
 samples:
   pU_input:
@@ -165,16 +172,16 @@ pre-filtered and over which the &Psi; fraction is computed.
 apptainer run -B /the/real/path bidseq.sif -c data.yaml -j 48
 ```
 
-`-B` must bind the real (resolved) path of every directory holding the references, the FASTQ
+`-B` must bind the real (resolved) paths of every directory holding the references, the FASTQ
 files and the working directory; use `realpath ./` to find it on shared HPC file systems.
 `-j` sets the number of parallel jobs/cores (48 was used).
 
-A SLURM submission script for this exact run is provided as `run_bidseq.sbatch`.
+A SLURM submission script for this exact run is also provided as `run_bidseq.sbatch` if preferred to run on Slurm.
 
 ### Processing and site-calling parameters
 
 All parameters below are the pipeline defaults (`config.yaml` inside the container) and were
-used unchanged for these samples:
+used as is for these samples:
 
 ```yaml
 adapter:
