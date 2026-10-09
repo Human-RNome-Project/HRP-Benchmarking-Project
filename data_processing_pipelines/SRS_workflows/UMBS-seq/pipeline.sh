@@ -15,10 +15,10 @@ set -euo pipefail
 # =============================================================================
 
 # --- Configuration -----------------------------------------------------------
-SAMPLES=("YSL-5" "YSL-6")
+SAMPLES=("HRP_B_032_1" "HRP_B_032_2")
 DATA_DIR="${DATA_DIR:-data}"
-HISAT3N_INDEX="../reference/hisat3n/refs_gen"
-REF_FASTA="../reference/refs_gen.fa"
+HISAT3N_INDEX="/your/path/to/references/hisat3n/refs_gen"
+REF_FASTA="/your/path/to/references/refs_gen.fa"
 SPIKEINS=("lambda" "pUC19")
 THREADS=$(nproc)
 START_STEP="trim"
