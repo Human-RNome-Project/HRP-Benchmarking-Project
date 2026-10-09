@@ -12,18 +12,16 @@ files to a bedRMod file.
 
 | HRP sample name         | Internal ID | Raw FASTQ files                                                        |
 | ----------------------- | ----------- | ---------------------------------------------------------------------- |
-| `m5C_UMBS_seq_rep1`  | `YSL-5`     | `HRP_B_032_1_R1.fastq.gz`, `HRP_B_032_1_R2.fastq.gz` |
-| `m5C_UMBS_seq_rep2`  | `YSL-6`     | `HRP_B_032_2_R1.fastq.gz`, `HRP_B_032_2_R2.fastq.gz` |
+| `m5C_UMBS_seq_rep1`  | `YSL-5 (HRP_B_032_1)`     | `HRP_B_032_1_R1.fastq.gz`, `HRP_B_032_1_R2.fastq.gz` |
+| `m5C_UMBS_seq_rep2`  | `YSL-6 (HRP_B_032_2)`     | `HRP_B_032_2_R1.fastq.gz`, `HRP_B_032_2_R2.fastq.gz` |
 
 The two libraries are technical replicates of UMBS-treated (bisulfite-converted) human mRNA.
-Throughout the pipeline the samples are referred to by their internal IDs `YSL-5` and `YSL-6`,
-which is also how they are named in the intermediate files.
 
 ---
 
 # Requirements & Setup
 
-A conda environment file (`UMBS_pipeline.yml`) is provided.
+A conda environment file (`UMBS_pipeline.yml`) is provided and includes the software below. Ensure conda is installed beforehand (https://anaconda.org/channels/anaconda/packages/conda/overview).
 
 ```sh
 conda env create -f UMBS_pipeline.yml
@@ -65,17 +63,26 @@ RNA, used to measure the conversion rate). Reads are mapped once against the com
 reference and split by reference afterwards.
 
 ```sh
+mkdir your_reference_directory
 refdir='your_reference_directory'
 
 # human genome (Ensembl GRCh38 primary assembly)
 curl -O https://ftp.ensembl.org/pub/release-110/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 gunzip -c Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz > ${refdir}/human.fa
 
+# spike-ins – need to be downloaded from the NEB DNA Sequences and Maps Tool (https://www.neb.com/en-us/tools-and-resources/interactive-tools/dna-sequences-and-maps-tool
+cd ${refdir}
+curl -O https://www.neb.com/en-us/-/media/nebus/page-images/tools-and-resources/interactive-tools/dna-sequences-and-maps/text-documents/lambdafsa.txt?rev=3e383cece27042e185e76aa9c511950a&hash=7C6137DA89EEA387D914939FC9704C13
+curl -O https://www.neb.com/en-us/-/media/nebus/page-images/tools-and-resources/interactive-tools/dna-sequences-and-maps/text-documents/puc19fsa.txt?rev=6e10f4c4a4234d638e401cd2f4578ef0&hash=E71970068EEA191C175B3458DB99D7BB
+mv lambdafsa.txt lambda.fa
+mv puc19fsa.txt pUC19.fa
+
 # combined reference (human + spike-ins)
 cat ${refdir}/human.fa ${refdir}/lambda.fa ${refdir}/pUC19.fa > ${refdir}/refs_gen.fa
 samtools faidx ${refdir}/refs_gen.fa
 
 # C-to-T index
+mkdir ${refdir}/hisat3n/
 hisat-3n-build --base-change C,T -p 32 ${refdir}/refs_gen.fa ${refdir}/hisat3n/refs_gen
 ```
 
@@ -84,16 +91,15 @@ calls; only the conversion-rate QC is then unavailable.
 
 ## 2. Read processing, alignment and per-position conversion counts
 
-All steps are implemented in `pipeline.sh` (provided next to this README); it reproduces the
-core pipeline of the original analysis notebook `02_core_pipeline.ipynb`.
+All steps are implemented in `pipeline.sh` (provided next to this README). Adjust the paths in the “Configuration” portion of the `pipeline.sh` to note the locations of your FASTA files, HISAT3N indices, and raw data files.
 
 ```sh
 ./pipeline.sh --index ${refdir}/hisat3n/refs_gen \
-              --ref   ${refdir}/refs_gen.fa \
+              --ref ${refdir}/refs_gen.fa \
               --threads 32
 ```
 
-The individual steps and their parameters:
+The individual steps and their parameters in `pipeline.sh` are detailed below:
 
 ### trim (cutadapt 5.2)
 
@@ -105,8 +111,8 @@ cutadapt -j 0 -n 2 \
     -u 5 -U 5 --rename='{id}_{r1.cut_prefix}{r2.cut_prefix}' \
     --too-short-output=trim/${SAMPLE}_R1.fa_short \
     --too-short-paired-output=trim/${SAMPLE}_R2.fa_short \
-    -o trim/${SAMPLE}_R1.fq.gz -p trim/${SAMPLE}_R2.fq.gz \
-    ${SAMPLE}_R1.fq.gz ${SAMPLE}_R2.fq.gz > trim/${SAMPLE}.report
+    -o trim/${SAMPLE}_R1.fastq.gz -p trim/${SAMPLE}_R2.fastq.gz \
+    ${SAMPLE}_R1.fastq.gz ${SAMPLE}_R2.fastq.gz > trim/${SAMPLE}.report
 ```
 
 ### map (hisat-3n 0.0.3)
@@ -115,8 +121,8 @@ cutadapt -j 0 -n 2 \
 hisat-3n --index ${INDEX} -p ${THREADS} --base-change C,T --mp 8,2 \
     --no-spliced-alignment \
     --summary-file map/${SAMPLE}.summary --new-summary \
-    -1 trim/${SAMPLE}_R1.fq.gz -2 trim/${SAMPLE}_R2.fq.gz \
-    --un-conc-gz map/${SAMPLE}_R%.fq.gz -S map/${SAMPLE}.sam
+    -1 trim/${SAMPLE}_R1.fastq.gz -2 trim/${SAMPLE}_R2.fastq.gz \
+    --un-conc-gz map/${SAMPLE}_R%.fastq.gz -S map/${SAMPLE}.sam
 samtools view -@ ${THREADS} -F4 -b map/${SAMPLE}.sam \
   | samtools sort -@ ${THREADS} --write-index -O BAM -o map/${SAMPLE}.bam -
 ```
@@ -183,7 +189,7 @@ well; it is used to estimate the background non-conversion rate (next section).
 
 ## 3. m5C site calling
 
-Implemented in `m5C_calling.py`, reproducing `05_m5C_calling.ipynb`.
+Implemented in `m5C_calling.py`.
 
 At every cytosine with depth *d* and *k* unconverted reads, the probability of observing at
 least *k* unconverted reads by chance is computed from the binomial tail
@@ -196,8 +202,8 @@ would give an anti-conservative estimate:
 
 | Sample | `e`        |
 | ------ | ---------- |
-| YSL-5  | `0.000731` |
-| YSL-6  | `0.000836` |
+| YSL-5 (HRP_B_032_1) | `0.000731` |
+| YSL-6 (HRP_B_032_2) | `0.000836` |
 
 **Calling thresholds**
 
@@ -209,20 +215,20 @@ would give an anti-conservative estimate:
 
 ```sh
 python m5C_calling.py \
-    --input conv_unconv3n_filter/YSL-5.tsv.gz --sample YSL-5 \
+    --input conv_unconv3n_filter/HRP_B_032_1.tsv.gz --sample HRP_B_032_1 \
     --error-rate 0.000731 --min-depth 3 --min-ratio 0.0 --max-p-value 1e-12 \
-    --output m5C_sites_YSL-5_dpth_3_p_val_1e-12_min_rat_0.0.tsv
+    --output m5C_sites_HRP_B_032_1_dpth_3_p_val_1e-12_min_rat_0.0.tsv
 
 python m5C_calling.py \
-    --input conv_unconv3n_filter/YSL-6.tsv.gz --sample YSL-6 \
+    --input conv_unconv3n_filter/HRP_B_032_2.tsv.gz --sample HRP_B_032_2 \
     --error-rate 0.000836 --min-depth 3 --min-ratio 0.0 --max-p-value 1e-12 \
-    --output m5C_sites_YSL-6_dpth_3_p_val_1e-12_min_rat_0.0.tsv
+    --output m5C_sites_HRP_B_032_2_dpth_3_p_val_1e-12_min_rat_0.0.tsv
 
 # sites called in both replicates (long format: one row per site and sample)
 python m5C_calling.py --intersect \
-    --input m5C_sites_YSL-5_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
-            m5C_sites_YSL-6_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
-    --output m5C_sites_intersection_YSL-5_YSL-6_dpth_3_p_val_1e-12_min_rat_0.0.tsv
+    --input m5C_sites_HRP_B_032_1_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
+            m5C_sites_HRP_B_032_2_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
+    --output m5C_sites_intersection_HRP_B_032_1_HRP_B_032_2_dpth_3_p_val_1e-12_min_rat_0.0.tsv
 ```
 
 Repeat with `--max-p-value 1e-6` for the sensitive call set.  `--error-rate` may be omitted,
@@ -238,14 +244,14 @@ p_val, ID` (`ID` = `Chrom_Pos`, the key used for the intersection).
 
 ```sh
 python convert_to_bedRmod.py \
-    --input m5C_sites_intersection_YSL-5_YSL-6_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
+    --input m5C_sites_intersection_HRP_B_032_1_HRP_B_032_2_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
     --output m5C_UMBS_seq.bedrmod \
     --combine-samples
 
 # per replicate
-python convert_to_bedRmod.py --input m5C_sites_YSL-5_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
+python convert_to_bedRmod.py --input m5C_sites_HRP_B_032_1_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
     --output m5C_UMBS_seq_rep1.bedrmod
-python convert_to_bedRmod.py --input m5C_sites_YSL-6_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
+python convert_to_bedRmod.py --input m5C_sites_HRP_B_032_2_dpth_3_p_val_1e-12_min_rat_0.0.tsv \
     --output m5C_UMBS_seq_rep2.bedrmod
 ```
 
