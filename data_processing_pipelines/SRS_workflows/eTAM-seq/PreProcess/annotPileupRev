@@ -1,0 +1,629 @@
+#!/usr/bin/perl
+# $Id$
+use strict;
+use warnings;
+# usage: gzip -dc <GB_DIR>/*.gb.gz | annotPileupRev <bam> [genome.fa.gz]
+# the genome FASTA can also come from the GENOME_FA_GZ environment variable
+my $bam = shift @ARGV;
+die "usage: $0 <bam> [genome.fa.gz] < records.gb\n" unless defined $bam;
+my $fa = $ENV{GENOME_FA_GZ} || "/home/h/OneDrive/Unil/data/b38/b38.fa.gz";
+$fa = shift @ARGV if @ARGV && $ARGV[0] !~ /\.gb$/;
+die "Genome FASTA not found: $fa (set GENOME_FA_GZ or pass it as 2nd argument)\n" unless -s $fa;
+my $name;
+my $seq;
+my $len;
+my @P;
+my @M;
+local *FD;
+print "chr\tpos\tnt\tnbA\tnbG\tnbA+G\tnbStart\tnbStop\tkind\taa\tframe\tcontext\tdonor\tacceptor\tgene\n";
+while ( <> ) {
+  if (/^LOCUS\s+\w+\s+(\d+) bp/) {
+    $len = $1;
+    if (defined $name) {
+      # do the pileup and annotate
+      &annotate;
+    }
+    undef $name;
+    undef $seq;
+    undef @P;
+    undef @M;
+    next;
+  }
+  if (/^DEFINITION\s+.* chromosome ([^.,]+)[,.]/) {
+    $name = "chr" . $1;
+    print STDERR "Loading sequence $name\n";
+    open FD, "gzip -dc $fa |" or die "Can't read $fa fasta file : $!";
+    while ( <FD> ) {
+      if (/^>(\S+)/) {
+	if ($name eq $1) {
+	  $seq = "";
+	  while ( <FD> ) {
+	    last if /^>/;
+	    s/\s+//gs;
+	    $seq .= uc;
+	  }
+	  last;
+	}
+      }
+    }
+    close FD;
+    die "Couldn't load seq $name" unless defined $seq;
+    $len = length $seq;
+    next;
+  }
+  next unless /^FEATURES/;
+  my $cur;
+  while ( <> ) {
+    last if /^\S/;
+    s/\s+$//s;
+    if (/^     \S/) {
+      &analyze($cur) if defined $cur;
+      s/^\s+//;
+      $cur = $_;
+      next;
+    }
+    $cur .= " " unless $cur =~ /,$/ or $cur =~ /\/translation="/;
+    s/^\s+//;
+    $cur .= $_;
+  }
+  &analyze($cur) if defined $cur;
+}
+if (defined $name) {
+  # do the pileup and annotate
+  &annotate;
+}
+exit 0;
+
+#pccig4007_chris: samtools mpileup -B -x -r chr2L:22536022-22536030 --ff UNMAP,SECONDARY,QCFAIL,DUP,REVERSE -f /data6/dm6/dm6.fa.gz 20240508/outstitch/W1118_1/W1118_1.dm6.align.sorted.dedup.flt.bam|less
+#chr2L   22536022        G       2435    .>>>>>>>>>>>>>>...$............................................................................................
+#chr2L   22536023        C       2459    ..>>>>>>>>>>>>>>...T$........................................$.................................................
+#chr2L   22536024        A       2465    ..>>>>>>>>>>>>>>.......................................$.$.....................................................
+#chr2L   22536025        G       2490    ..>>>>>>>>>>>>>>............>....$...............A..............................................A..............
+#chr2L   22536026        T       2505    CC>>>>>>>>>>>>>>CCCCCCCCCCCC>CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+#chr2L   22536027        A       2506    ..>>>>>>>>>>>>>>............>..............................$...................................................
+#
+#pccig4007_chris: samtools mpileup -B -x -r chr2L:22536022-22536030 --ff UNMAP,SECONDARY,QCFAIL,DUP --rf REVERSE -f /data6/dm6/dm6.fa.gz 20240508/outstitch/W1118_1/W1118_1.dm6.align.sorted.dedup.flt.bam|less
+#chr2L   22536022        G       4       <<,,    MMM<
+#chr2L   22536023        C       4       <<,,    MMKB
+#chr2L   22536024        A       4       <<,,    MMM?
+#chr2L   22536025        G       4       <<,,    MMMC
+#chr2L   22536026        T       4       <<cc    MMMD
+#chr2L   22536027        A       4       <<,,    MMMM
+#
+#pccig4007_chris: samtools mpileup -B -x -r chr2L:22536022-22536030 --ff UNMAP,SECONDARY,QCFAIL,DUP,REVERSE -f /data6/dm6/dm6.fa.gz Mettl3/outstitch/Mettl3.dm6.align.sorted.dedup.flt.bam|less
+#chr2L   22536022        G       154     >>>.>>>>.A............>>.....A......>.............$.............................................................
+#chr2L   22536023        C       154     >>>.>>>>..............>>...........>............................................................................
+#chr2L   22536024        A       151     >>>.>>>>..............>>............>...........................................................................
+#chr2L   22536025        G       155     >>>.>>>>..A.......$....>>........$....>.....$....................A.AA...........................................
+#chr2L   22536026        T       153     >>>C>>>>CCCCCCCCCCCCC>>CCCCCCCCCCC>CCC$CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC.CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+#chr2L   22536027        A       154     >>>.>>>>..$...........>>...........>............................................................................
+#
+#pccig4007_chris: samtools mpileup -B -x -r chr2L:22536022-22536030 --ff UNMAP,SECONDARY,QCFAIL,DUP --rf REVERSE -f /data6/dm6/dm6.fa.gz Mettl3/outstitch/Mettl3.dm6.align.sorted.dedup.flt.bam|less
+#chr2L   22536022        G       7962    ,<<<<<<<<<<<<<<<<<<,<<<<<<<<<<<<<<<<<<<<<<,,<<<,<<<<<<,<,,<,<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#chr2L   22536023        C       7977    ,<<<<<<<<<<<<<<<<<<,<<<<<<<<<<<<<<<<<<<<<<,,<<<,<<<<<<,<,,<,<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#chr2L   22536024        A       7874    ,<<<<<<<<<<<<<<<<<<,<<<<<<<<<<<<<<<<<<<<<<,,<<<,<<<<<<,<,,<,<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#chr2L   22536025        G       7905    ,<<<<<<<<<<<<<<<<<<,<<<<<<<<<<<<<<<<<<<<<<,,<<<,<<<<<<,<,,<,<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#chr2L   22536026        T       7960    c<<<<<<<<<<<<<<<<<<cc<<<<<<<<<<<<<<<<<<<<<cc<<<c<<<<<<c<cc<c<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#chr2L   22536027        A       7897    ,<<<<<<<<<<<<<<<<<<,,<<<<<<<<<<<<<<<<<<<<<,,<<<,<<<<<<,<,,<,<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+sub annotate {
+  # look at genes on the forward strand
+  #open FD, "samtools mpileup -B -x -r $name --ff UNMAP,SECONDARY,QCFAIL,DUP,REVERSE -f /data6/dm6/dm6.fa.gz BIX/outstitch/S2R/S2R.dm6.align.sorted.dedup.flt.bam |" or die "Can't open bam file : $!";
+  open FD, "samtools mpileup -B -x -r $name --ff UNMAP,SECONDARY,QCFAIL,DUP --rf REVERSE -f $fa $bam |" or die "Can't open bam file $bam : $!";
+  while ( <FD> ) {
+    my @F = split /\t/;
+    next if uc($F[2]) ne "A";
+    my $nbStart = 0;
+    my $nbStop = 0;
+    my $nbA = 0;
+    my $nbG = 0;
+    my $i = 0;
+    while ($i < length($F[4])) {
+      my $c = substr $F[4], $i, 1;
+      if ($c eq "^") {# read start
+	$nbStart += 1;
+	$i += 1; # skip [
+      } elsif ($c eq "\$") {# read end
+	$nbStop += 1;
+      } elsif ($c eq ">" || $c eq "<" || $c eq "*" || $c eq "#") {
+	# nothing to do here
+      } elsif ($c eq ".") {# match in forward strand
+	die "Unexpected match in fwd at $_";
+      } elsif ($c eq ",") {# match in reverse strand
+	$nbA += 1;
+      } elsif ($c =~ /[ATCGN]/) {# mismatch in forward strand
+	die "Unexpected mismatch in fwd at $_";
+      } elsif ($c =~ /[atcgn]/) {# mismatch in reverse strand
+	$nbG += 1 if $c eq "g";
+      } elsif ($c eq "+") {# insertion - ,+2cc,
+	my $ds = $i + 1;
+	$i += 2;
+	my $c2 = substr $F[4], $i, 1;
+	while ($c2 =~ /\d/) {
+	  $i += 1;
+	  $c2 = substr $F[4], $i, 1;
+	}
+	my $nb = substr $F[4], $ds, $i - $ds;
+	$i += $nb - 1;
+      } elsif ($c eq "-") {# deletion - ,-2ta,
+	my $ds = $i + 1;
+	$i += 2;
+	my $c2 = substr $F[4], $i, 1;
+	while ($c2 =~ /\d/) {
+	  $i += 1;
+	  $c2 = substr $F[4], $i, 1;
+	}
+	my $nb = substr $F[4], $ds, $i - $ds;
+	$i += $nb - 1;
+      } else {
+	die "Unkown read base: $c";
+      }
+      $i += 1;
+    }
+    next unless $nbA + $nbG >= 10;
+    my @A = ( $F[0], $F[1], uc($F[2]), $nbA, $nbG, $nbA + $nbG, $nbStart, $nbStop );
+    if (defined $P[$F[1] - 1]) {
+      my $h = $P[$F[1] - 1];
+      for my $s ( 'kind', 'aa', 'frame', 'context', 'donor', 'acceptor', 'gene' ) {
+	if (defined $h->{$s}) {
+	  push @A, $h->{$s};
+	} else {
+	  push @A, "NA";
+	}
+      }
+    } else {
+      push @A, "NA", "NA", "NA", "NA", "NA", "NA", "NA";
+    }
+    print join("\t", @A), "\n";
+  }
+  close FD;
+  # look at genes on the reverse strand
+  #open FD, "samtools mpileup -B -x -r $name --ff UNMAP,SECONDARY,QCFAIL,DUP --rf REVERSE -f /data6/dm6/dm6.fa.gz BIX/outstitch/S2R/S2R.dm6.align.sorted.dedup.flt.bam |" or die "Can't open bam file : $!";
+  open FD, "samtools mpileup -B -x -r $name --ff UNMAP,SECONDARY,QCFAIL,DUP,REVERSE -f $fa $bam |" or die "Can't open bam file $bam : $!";
+  while ( <FD> ) {
+    my @F = split /\t/;
+    next if uc($F[2]) ne "T";
+    my $nbStart = 0;
+    my $nbStop = 0;
+    my $nbA = 0;
+    my $nbG = 0;
+    my $i = 0;
+    while ($i < length($F[4])) {
+      my $c = substr $F[4], $i, 1;
+      if ($c eq "^") {# read start
+	$nbStart += 1;
+	$i += 1; # skip [
+      } elsif ($c eq "\$") {# read end
+	$nbStop += 1;
+      } elsif ($c eq ">" || $c eq "<" || $c eq "*" || $c eq "#") {
+	# nothing to do here
+      } elsif ($c eq ".") {# match in forward strand
+	$nbA += 1;
+      } elsif ($c eq ",") {# match in reverse strand
+	die "Unexpected match in rev at $_";
+      } elsif ($c =~ /[ATCGN]/) {# mismatch in forward strand
+	$nbG += 1 if $c eq "C";
+      } elsif ($c =~ /[atcgn]/) {# mismatch in reverse strand
+	die "Unexpected mismatch in rev at $_";
+      } elsif ($c eq "+") {# insertion - ,+2cc,
+	my $ds = $i + 1;
+	$i += 2;
+	my $c2 = substr $F[4], $i, 1;
+	while ($c2 =~ /\d/) {
+	  $i += 1;
+	  $c2 = substr $F[4], $i, 1;
+	}
+	my $nb = substr $F[4], $ds, $i - $ds;
+	$i += $nb - 1;
+      } elsif ($c eq "-") {# deletion - ,-2ta,
+	my $ds = $i + 1;
+	$i += 2;
+	my $c2 = substr $F[4], $i, 1;
+	while ($c2 =~ /\d/) {
+	  $i += 1;
+	  $c2 = substr $F[4], $i, 1;
+	}
+	my $nb = substr $F[4], $ds, $i - $ds;
+	$i += $nb - 1;
+      } else {
+	die "Unkown read base: $c";
+      }
+      $i += 1;
+    }
+    next unless $nbA + $nbG >= 10;
+    my @A = ( $F[0], $F[1], uc($F[2]), $nbA, $nbG, $nbA + $nbG, $nbStart, $nbStop );
+    if (defined $M[$F[1] - 1]) {
+      my $h = $M[$F[1] - 1];
+      for my $s ( 'kind', 'aa', 'frame', 'context', 'donor', 'acceptor', 'gene' ) {
+	if (defined $h->{$s}) {
+	  push @A, $h->{$s};
+	} else {
+	  push @A, "NA";
+	}
+      }
+    } else {
+      push @A, "NA", "NA", "NA", "NA", "NA", "NA", "NA";
+    }
+    print join("\t", @A), "\n";
+  }
+  close FD;
+}
+
+sub analyze {
+  my ($s) = @_;
+  $s =~ s/^(\S+)\s+(\S+)\s+//;
+  my $kind = $1;
+  my $pos = $2;
+  die "grmp $s" unless defined $pos;
+  my $strand = "+";
+  $strand = "-" if $pos =~ s/^complement\((.*)\)$/$1/;
+  my @E;
+  my @P1;
+  my @P2;
+  if ($pos =~ s/^join\((.*)\)$/$1/) {
+    @E = split /,/, $pos;
+  } else {
+    push @E, $pos;
+  }
+  foreach my $e (@E) {
+    my ($p1, $p2) = $e =~ /^<?(\d+)\.\.>?(\d+)$/;
+    unless (defined $p2) {
+      return if $pos =~ /^order/; # some fly genes come from both strands... need to look into this at some point
+      return if $pos =~ /^complement/; # same - e.g. chr3R
+      die "grmp $e '$pos'" unless $e =~ /^>?\d+$/;
+      $p1 = $e;
+      $p2 = $e;
+    }
+    push @P1, $p1;
+    push @P2, $p2;
+  }
+  if ($kind eq "CDS") {
+    my $gene;
+    my $pep = "";
+    if ($s =~ /\/gene="([^"]+)"/) {
+      $gene = $1;
+    }
+    if ($s =~ s/ \/translation="([^"]+)"//) {
+      $pep = $1;
+    }
+    if ($strand eq "+") {
+      die "grmp $P1[0]" if $P1[0] < 4;
+      my $rna = substr $seq, $P1[0] - 4, 3;
+      for my $i (0 .. $#P1) {
+	$rna .= substr $seq, $P1[$i] - 1, $P2[$i] - $P1[$i] + 1;
+      }
+      $rna .= substr $seq, $P2[$#P2], 3;
+      my $curExon = 0;
+      my $p1 = $P1[$curExon] - 1;
+      my $p2 = $P2[$curExon] - 1;
+      my $i = $p1;
+      my $p = 0;
+      my $r = 3;
+      while ($p < length($pep)) {
+	#substr $seqP, $i, 1, "[" if substr($seqP, $i, 1) eq " ";
+	my $nt = substr $rna, $r, 1;
+	if ($nt eq "A" and (not defined($P[$i]) or $P[$i]->{'kind'} ne "CDS")) {
+	  $P[$i] = {};
+	  $P[$i]->{'kind'} = "CDS";
+	  $P[$i]->{'aa'} = substr $pep, $p, 1;
+	  $P[$i]->{'frame'} = 0;
+	  $P[$i]->{'context'} = substr $rna, $r - 3, 7;
+	  $P[$i]->{'donor'} = $p2 - $i if $curExon < $#P1 and $p2 - $i < 3;
+	  $P[$i]->{'acceptor'} = $i - $p1 if $curExon > 0 and $i - $p1 < 3;
+	  $P[$i]->{'gene'} = $gene if defined $gene;
+	}
+	$i += 1;
+	$r += 1;
+	if ($i > $p2) {
+	  $curExon += 1;
+	  last if $curExon > $#P1;
+	  $p1 = $P1[$curExon] - 1;
+	  $p2 = $P2[$curExon] - 1;
+	  $i = $p1;
+	}
+	$nt = substr $rna, $r, 1;
+	if ($nt eq "A" and (not defined($P[$i]) or $P[$i]->{'kind'} ne "CDS")) {
+	  $P[$i] = {};
+	  $P[$i]->{'kind'} = "CDS";
+	  $P[$i]->{'aa'} = substr $pep, $p, 1;
+	  $P[$i]->{'frame'} = 1;
+	  $P[$i]->{'context'} = substr $rna, $r - 3, 7;
+	  $P[$i]->{'donor'} = $p2 - $i if $curExon < $#P1 and $p2 - $i < 3;
+	  $P[$i]->{'acceptor'} = $i - $p1 if $curExon > 0 and $i - $p1 < 3;
+	  $P[$i]->{'gene'} = $gene if defined $gene;
+	}
+	$i += 1;
+	$r += 1;
+	if ($i > $p2) {
+	  $curExon += 1;
+	  last if $curExon > $#P1;
+	  $p1 = $P1[$curExon] - 1;
+	  $p2 = $P2[$curExon] - 1;
+	  $i = $p1;
+	}
+	#substr $seqP, $i, 1, ">" if substr($seqP, $i, 1) eq " ";
+	$nt = substr $rna, $r, 1;
+	if ($nt eq "A" and (not defined($P[$i]) or $P[$i]->{'kind'} ne "CDS")) {
+	  $P[$i] = {};
+	  $P[$i]->{'kind'} = "CDS";
+	  $P[$i]->{'aa'} = substr $pep, $p, 1;
+	  $P[$i]->{'frame'} = 2;
+	  $P[$i]->{'context'} = substr $rna, $r - 3, 7;
+	  $P[$i]->{'donor'} = $p2 - $i if $curExon < $#P1 and $p2 - $i < 3;
+	  $P[$i]->{'acceptor'} = $i - $p1 if $curExon > 0 and $i - $p1 < 3;
+	  $P[$i]->{'gene'} = $gene if defined $gene;
+	}
+	$i += 1;
+	$r += 1;
+	if ($i > $p2) {
+	  $curExon += 1;
+	  last if $curExon > $#P1;
+	  $p1 = $P1[$curExon] - 1;
+	  $p2 = $P2[$curExon] - 1;
+	  $i = $p1;
+	}
+	$p += 1;
+      }
+    } else {
+      die "grmp $P1[0]" if $P1[0] < 4;
+      my $rna = substr $seq, $P1[0] - 4, 3;
+      for my $i (0 .. $#P1) {
+	$rna .= substr $seq, $P1[$i] - 1, $P2[$i] - $P1[$i] + 1;
+      }
+      $rna .= substr $seq, $P2[$#P2], 3;
+      $rna = reverse $rna;
+      $rna =~ tr/ACGT/TGCA/;
+      my $curExon = $#P1;
+      my $p1 = $P1[$curExon] - 1;
+      my $p2 = $P2[$curExon] - 1;
+      my $i = $p2;
+      my $p = 0;
+      my $r = 3;
+      while ($p < length($pep)) {
+	#substr $seqM, $i, 1, "]" if substr($seqM, $i, 1) eq " ";
+	my $nt = substr $rna, $r, 1;
+	if ($nt eq "A" and (not defined($M[$i]) or $M[$i]->{'kind'} ne "CDS")) {
+	  $M[$i] = {};
+	  $M[$i]->{'kind'} = "CDS";
+	  $M[$i]->{'aa'} = substr $pep, $p, 1;
+	  $M[$i]->{'frame'} = 0;
+	  $M[$i]->{'context'} = substr $rna, $r - 3, 7;
+	  $M[$i]->{'donor'} = $i - $p1 if $curExon > 0 and $i - $p1 < 3;
+	  $M[$i]->{'acceptor'} = $p2 - $i if $curExon < $#P1 and $p2 - $i < 3;
+	  $M[$i]->{'gene'} = $gene if defined $gene;
+	}
+	$i -= 1;
+	$r += 1;
+	if ($i < $p1) {
+	  $curExon -= 1;
+	  last if $curExon < 0;
+	  $p1 = $P1[$curExon] - 1;
+	  $p2 = $P2[$curExon] - 1;
+	  $i = $p2;
+	}
+	#substr $seqM, $i, 1, substr($pep, $p, 1) if substr($seqM, $i, 1) eq " ";
+	$nt = substr $rna, $r, 1;
+	if ($nt eq "A" and (not defined($M[$i]) or $M[$i]->{'kind'} ne "CDS")) {
+	  $M[$i] = {};
+	  $M[$i]->{'kind'} = "CDS";
+	  $M[$i]->{'aa'} = substr $pep, $p, 1;
+	  $M[$i]->{'frame'} = 1;
+	  $M[$i]->{'context'} = substr $rna, $r - 3, 7;
+	  $M[$i]->{'donor'} = $i - $p1 if $curExon > 0 and $i - $p1 < 3;
+	  $M[$i]->{'acceptor'} = $p2 - $i if $curExon < $#P1 and $p2 - $i < 3;
+	  $M[$i]->{'gene'} = $gene if defined $gene;
+	}
+	$i -= 1;
+	$r += 1;
+	if ($i < $p1) {
+	  $curExon -= 1;
+	  last if $curExon < 0;
+	  $p1 = $P1[$curExon] - 1;
+	  $p2 = $P2[$curExon] - 1;
+	  $i = $p2;
+	}
+	#substr $seqM, $i, 1, "<" if substr($seqM, $i, 1) eq " ";
+	$nt = substr $rna, $r, 1;
+	if ($nt eq "A" and (not defined($M[$i]) or $M[$i]->{'kind'} ne "CDS")) {
+	  $M[$i] = {};
+	  $M[$i]->{'kind'} = "CDS";
+	  $M[$i]->{'aa'} = substr $pep, $p, 1;
+	  $M[$i]->{'frame'} = 2;
+	  $M[$i]->{'context'} = substr $rna, $r - 3, 7;
+	  $M[$i]->{'donor'} = $i - $p1 if $curExon > 0 and $i - $p1 < 3;
+	  $M[$i]->{'acceptor'} = $p2 - $i if $curExon < $#P1 and $p2 - $i < 3;
+	  $M[$i]->{'gene'} = $gene if defined $gene;
+	}
+	$i -= 1;
+	$r += 1;
+	if ($i < $p1) {
+	  $curExon -= 1;
+	  last if $curExon < 0;
+	  $p1 = $P1[$curExon] - 1;
+	  $p2 = $P2[$curExon] - 1;
+	  $i = $p2;
+	}
+	$p += 1;
+      }
+    }
+  }
+  if ($kind eq "mRNA" or $kind eq "misc_RNA" or $kind eq "ncRNA" or $kind eq "precursor_RNA" or $kind eq "rRNA" or $kind eq "tRNA") {
+    my $gene;
+    if ($s =~ /\/gene="([^"]+)"/) {
+      $gene = $1;
+    }
+    if ($strand eq "+") {
+      die "grmp $P1[0]" if $P1[0] < 4;
+      my $rna = substr $seq, $P1[0] - 4, 3;
+      for my $i (0 .. $#P1) {
+	$rna .= substr $seq, $P1[$i] - 1, $P2[$i] - $P1[$i] + 1;
+      }
+      $rna .= substr $seq, $P2[$#P2], 3;
+      my $curExon = 0;
+      my $p1 = $P1[$curExon] - 1;
+      my $p2 = $P2[$curExon] - 1;
+      my $i = $p1;
+      my $r = 3;
+      while ($r < (length($rna) - 3)) {
+	my $nt = substr $rna, $r, 1;
+	if ($nt eq "A" and not defined($P[$i])) {
+	  $P[$i] = {};
+	  $P[$i]->{'kind'} = $kind;
+	  $P[$i]->{'context'} = substr $rna, $r - 3, 7;
+	  $P[$i]->{'donor'} = $p2 - $i if $curExon < $#P1 and $p2 - $i < 3;
+	  $P[$i]->{'acceptor'} = $i - $p1 if $curExon > 0 and $i - $p1 < 3;
+	  $P[$i]->{'gene'} = $gene if defined $gene;
+	}
+	$i += 1;
+	$r += 1;
+	if ($i > $p2) {
+	  $curExon += 1;
+	  last if $curExon > $#P1;
+	  $p1 = $P1[$curExon] - 1;
+	  $p2 = $P2[$curExon] - 1;
+	  $i = $p1;
+	}
+      }
+    } else {
+      die "grmp $P1[0]" if $P1[0] < 4;
+      my $rna = substr $seq, $P1[0] - 4, 3;
+      for my $i (0 .. $#P1) {
+	$rna .= substr $seq, $P1[$i] - 1, $P2[$i] - $P1[$i] + 1;
+      }
+      $rna .= substr $seq, $P2[$#P2], 3;
+      $rna = reverse $rna;
+      $rna =~ tr/ACGT/TGCA/;
+      my $curExon = $#P1;
+      my $p1 = $P1[$curExon] - 1;
+      my $p2 = $P2[$curExon] - 1;
+      my $i = $p2;
+      my $p = 0;
+      my $r = 3;
+      while ($r < (length($rna) - 3)) {
+	my $nt = substr $rna, $r, 1;
+	if ($nt eq "A" and not defined($M[$i])) {
+	  $M[$i] = {};
+	  $M[$i]->{'kind'} = $kind;
+	  $M[$i]->{'context'} = substr $rna, $r - 3, 7;
+	  $M[$i]->{'donor'} = $i - $p1 if $curExon > 0 and $i - $p1 < 3;
+	  $M[$i]->{'acceptor'} = $p2 - $i if $curExon < $#P1 and $p2 - $i < 3;
+	  $M[$i]->{'gene'} = $gene if defined $gene;
+	}
+	$i -= 1;
+	$r += 1;
+	if ($i < $p1) {
+	  $curExon -= 1;
+	  last if $curExon < 0;
+	  $p1 = $P1[$curExon] - 1;
+	  $p2 = $P2[$curExon] - 1;
+	  $i = $p2;
+	}
+      }
+    }
+  }
+}
+__END__
+  11047 CDS
+   5078 gene
+   1617 misc_RNA
+  11046 mRNA
+   2575 ncRNA
+    158 precursor_RNA
+     17 rRNA
+     90 tRNA
+
+pccig4007_chris: samtools mpileup -B -x -r chr2L:103999-104249 --ff UNMAP,SECONDARY,QCFAIL,DUP,REVERSE -f /data6/dm6/dm6.fa.gz BIX/outstitch/S2R/S2R.dm6.align.sorted.dedup.flt.bam | grep 10410[012]
+[mpileup] 1 samples in 1 input files
+chr2L   104100  T       40      >>>>>>>>................................        F:HFHHFHFAHHGHHHGHHHHHHHHHHHGHGHHHHHHHHH
+chr2L   104101  C       40      >>>>>>>>..........$...........T.....T...^].     F:HFHHFHFHGGGHHHGHHHGHHHHH;HHHHHHHHHHHHF
+chr2L   104102  A       40      >>>>>>>>GGGGGGGGG.GGGGGGGGGGGGGGG.GGGGGG        F:HFHHFHFHGHHHHH;HHHHHHHHHHGHGHHHHHHHHHF
+
+pccig4007_chris: samtools mpileup -B -x -r chr2L:103999-104249 --ff UNMAP,SECONDARY,QCFAIL,DUP --rf REVERSE -f /data6/dm6/dm6.fa.gz BIX/outstitch/S2R/S2R.dm6.align.sorted.dedup.flt.bam | grep 10410[012]
+[mpileup] 1 samples in 1 input files
+chr2L   104100  T       35      <cccccccccccccccccccccccccccccccccc     HHH?HHFHHHHFFHFHHHHFHFGFFFFHFHFHHHH
+chr2L   104101  C       35      <,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,     HHHHHHFHHHGFFHFHHHHFHFHFFFFHFHFHHHH
+chr2L   104102  A       34      <,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,      HAHHHGFHHHGFFHFGHHHFHFH:FFHFHF;HHH
+
+==> /data6/dm6/GB/NC_004353.gb <==
+LOCUS       NC_004353            1348131 bp    DNA     linear   CON 22-APR-2020
+DEFINITION  Drosophila melanogaster chromosome 4.
+ACCESSION   NC_004353 NW_001845041
+VERSION     NC_004353.4
+DBLINK      BioProject: PRJNA164
+            BioSample: SAMN02803731
+            Assembly: GCF_000001215.4
+KEYWORDS    RefSeq.
+SOURCE      Drosophila melanogaster (fruit fly)
+  ORGANISM  Drosophila melanogaster
+
+==> /data6/dm6/GB/NC_004354.gb <==
+LOCUS       NC_004354           23542271 bp    DNA     linear   CON 22-APR-2020
+DEFINITION  Drosophila melanogaster chromosome X.
+ACCESSION   NC_004354 NW_001844882 NW_001845036 NW_001848859
+VERSION     NC_004354.4
+DBLINK      BioProject: PRJNA164
+            BioSample: SAMN02803731
+            Assembly: GCF_000001215.4
+KEYWORDS    RefSeq.
+SOURCE      Drosophila melanogaster (fruit fly)
+  ORGANISM  Drosophila melanogaster
+
+==> /data6/dm6/GB/NC_024512.gb <==
+LOCUS       NC_024512            3667352 bp    DNA     linear   CON 22-APR-2020
+DEFINITION  Drosophila melanogaster chromosome Y.
+ACCESSION   NC_024512 NW_001844735 NW_001844843 NW_001844868 NW_001844869
+            NW_001844874 NW_001844917 NW_001845004 NW_001845447 NW_001845711
+            NW_001845825 NW_001846080 NW_001846110 NW_001847094 NW_001848860
+VERSION     NC_024512.1
+DBLINK      BioProject: PRJNA164
+            BioSample: SAMN02803731
+            Assembly: GCF_000001215.4
+KEYWORDS    RefSeq.
+
+==> /data6/dm6/GB/NT_033777.gb <==
+LOCUS       NT_033777           32079331 bp    DNA     linear   CON 22-APR-2020
+DEFINITION  Drosophila melanogaster chromosome 3R.
+ACCESSION   NT_033777 NW_001844733 NW_001844734 NW_001844736 NW_001844852
+            NW_001844855 NW_001844895 NW_001848858
+VERSION     NT_033777.3
+DBLINK      BioProject: PRJNA164
+            BioSample: SAMN02803731
+            Assembly: GCF_000001215.4
+KEYWORDS    RefSeq.
+SOURCE      Drosophila melanogaster (fruit fly)
+
+==> /data6/dm6/GB/NT_033778.gb <==
+LOCUS       NT_033778           25286936 bp    DNA     linear   CON 22-APR-2020
+DEFINITION  Drosophila melanogaster chromosome 2R.
+ACCESSION   NT_033778 NW_001844732 NW_001844738 NW_001848856
+VERSION     NT_033778.4
+DBLINK      BioProject: PRJNA164
+            BioSample: SAMN02803731
+            Assembly: GCF_000001215.4
+KEYWORDS    RefSeq.
+SOURCE      Drosophila melanogaster (fruit fly)
+  ORGANISM  Drosophila melanogaster
+
+==> /data6/dm6/GB/NT_033779.gb <==
+LOCUS       NT_033779           23513712 bp    DNA     linear   CON 22-APR-2020
+DEFINITION  Drosophila melanogaster chromosome 2L.
+ACCESSION   NT_033779 NW_001848855
+VERSION     NT_033779.5
+DBLINK      BioProject: PRJNA164
+            BioSample: SAMN02803731
+            Assembly: GCF_000001215.4
+KEYWORDS    RefSeq.
+SOURCE      Drosophila melanogaster (fruit fly)
+  ORGANISM  Drosophila melanogaster
+
+==> /data6/dm6/GB/NT_037436.gb <==
+LOCUS       NT_037436           28110227 bp    DNA     linear   CON 22-APR-2020
+DEFINITION  Drosophila melanogaster chromosome 3L.
+ACCESSION   NT_037436 NW_001844849 NW_001848857
+VERSION     NT_037436.4
+DBLINK      BioProject: PRJNA164
+            BioSample: SAMN02803731
+            Assembly: GCF_000001215.4
+KEYWORDS    RefSeq.
+SOURCE      Drosophila melanogaster (fruit fly)
+  ORGANISM  Drosophila melanogaster

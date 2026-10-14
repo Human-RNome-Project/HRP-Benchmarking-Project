@@ -1,0 +1,68 @@
+#!/bin/bash
+# usage: ./run [ref_dir]
+#        REF_DIR=/path/to/b38 ./run
+#
+# ---- paths (all overridable from the environment) -------------------------
+# Reference folder holding the genome, the hisat-3n indexes and the GenBank
+# records. See README.md, "Reference data: where to get it".
+REF_DIR=${1:-${REF_DIR:-/home/h/OneDrive/Unil/data/b38}}
+# genome sequence, bgzipped, given to annotPileupRev / samtools mpileup
+GENOME_FA_GZ=${GENOME_FA_GZ:-$REF_DIR/b38.fa.gz}
+# RefSeq GenBank flat files, one per chromosome
+GB_DIR=${GB_DIR:-$REF_DIR/GB}
+# name of the hisat-3n genome index: it is part of every output file name
+GENOME_INDEX_NAME=${GENOME_INDEX_NAME:-b38}
+# the two other scripts of the pipeline: taken from the current folder, or from
+# the parent one for annotPileupRev when it is shared between datasets
+MAP_SH=${MAP_SH:-./2_map_and_count_stitched_reads.sh}
+ANNOT_PL=${ANNOT_PL:-$( [[ -x ./annotPileupRev ]] && echo ./annotPileupRev || echo ../annotPileupRev )}
+# input FASTQ folder and sample list
+FQ_DIR=${FQ_DIR:-fq}
+# threads (NGmerge here, and passed on to the mapping script)
+NCPUS=${NCPUS:-24}
+SAMPLES=${SAMPLES:-"Rnome-FTO1 Rnome-FTO2 Rnome-FTO3 Rnome-IVT-1 Rnome-IVT-3 Rnome-mRNA-1 Rnome-mRNA-2 Rnome-mRNA-3"}
+# ---------------------------------------------------------------------------
+
+# exported so that 2_map_and_count_stitched_reads.sh uses the same values
+export REF_DIR GENOME_INDEX_NAME NCPUS
+
+for f in "$GENOME_FA_GZ" "$MAP_SH" "$ANNOT_PL"; do
+  [[ -s $f ]] || { echo "Missing file: $f (check REF_DIR='$REF_DIR', see README.md)" >&2; exit 1; }
+done
+compgen -G "$GB_DIR/*.gb.gz" > /dev/null || { echo "No GenBank record in $GB_DIR (see README.md)" >&2; exit 1; }
+
+echo "Reference folder: $REF_DIR"
+
+for sample in $SAMPLES; do
+  if [[ -s outstitch/$sample/$sample.$GENOME_INDEX_NAME.align.sorted.dedup.flt.bam ]]; then
+    echo "Sample $sample was already processed - skipping"
+    continue
+  fi
+  echo "Processing sample $sample"
+  cutadapt -j 0 -e 0.1 -n 1 -O 1 -q 6 -m 0:46 \
+           -g GACGCTCTTCCGATCT -A AGATCGGAAGAGCGTC \
+           -o $sample.R1.a5trim.fastq.gz \
+           -p $sample.R2.a3trim.fastq.gz \
+           <(gzip -dc $FQ_DIR/${sample}_L?_R1_???.fastq.gz) \
+           <(gzip -dc $FQ_DIR/${sample}_L?_R2_???.fastq.gz) > $sample.a3a5trim.umi.round1.log || break
+  cutadapt -j 0 -e 0.1 -n 1 -O 7 -q 6 -m 0:46 \
+           -a NNNNNNAGATCGGAAGAGCACA -G TGTGCTCTTCCGATCT \
+           -o $sample.R1.a3a5trim.fastq.gz \
+           -p $sample.R2.a3a5trim.fastq.gz \
+           $sample.R1.a5trim.fastq.gz \
+           $sample.R2.a3trim.fastq.gz > $sample.a3a5trim.umi.round2.log || break
+  umi_tools extract --random-seed=123 --extract-method=regex --bc-pattern=".*" --bc-pattern2="^(?P<umi_1>.{6}).*" \
+                    -I $sample.R1.a3a5trim.fastq.gz --read2-in=$sample.R2.a3a5trim.fastq.gz \
+                    --stdout=$sample.R1.a3a5trim.umi.fastq.gz \
+                    --read2-out=$sample.R2.a3a5trim.umi.fastq.gz \
+                    -L $sample.a3a5trim.umi.log || break
+  NGmerge -1 $sample.R1.a3a5trim.umi.fastq.gz -2 $sample.R2.a3a5trim.umi.fastq.gz -o $sample.stitched.fq -f $sample.nonstitched -s -d -e 20 -z -n $NCPUS -u 45 -g -v || break
+  rm $sample.R1.a5trim.fastq.gz $sample.R2.a3trim.fastq.gz
+  rm $sample.R[12].a3a5trim.fastq.gz
+  $MAP_SH $sample "$REF_DIR" || break
+  echo "Annotating $sample"
+  gzip -dc $GB_DIR/*.gb.gz | $ANNOT_PL outstitch/$sample/$sample.$GENOME_INDEX_NAME.align.sorted.dedup.flt.bam $GENOME_FA_GZ >$sample.annot.txt
+  rm $sample.nonstitched_?.fastq.gz
+done
+
+exit 0
