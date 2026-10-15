@@ -1,0 +1,31 @@
+# BID-seq configuration for the HRP pseudouridine RNome samples.
+# Paths below are the ones used on the UChicago midway3 cluster; adjust for your system.
+
+reference:
+  genes:
+    fa: /your/path/to/references/rRNA.fa
+  genome:
+    fa: /your/path/to/references/GRCh38.fa
+    star: /your/path/to/references/GRCh38.release110
+
+samples:
+  pU_input:
+    data:
+      - R1: /your/path/to/raw_data/HRP_B_031_1_R1.fastq.gz
+        R2: /your/path/to/raw_data/HRP_B_031_1_R2.fastq.gz
+    group: HRP_pU
+    treated: false
+  pU_treat_rep1:
+    data:
+      - R1: /your/path/to/raw_data/HRP_B_031_2_R1.fastq.gz
+        R2: /your/path/to/raw_data/HRP_B_031_2_R2.fastq.gz
+    group: HRP_pU
+    treated: true
+  pU_treat_rep2:
+    data:
+      - R1: /your/path/to/raw_data/HRP_B_031_3_R1.fastq.gz
+        R2: /your/path/to/raw_data/HRP_B_031_3_R2.fastq.gz
+    group: HRP_pU
+    treated: true
+
+forward_stranded: false
