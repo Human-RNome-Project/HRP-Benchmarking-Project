@@ -16,7 +16,7 @@ A shared helper module, `figure_6_helper_functions.py`, provides the common data
 
 - `figure_6a.py`
   - Generates the 18S rRNA panel.
-  - Uses a detailed consensus rRNA BED file plus a Taoka reference BED file to identify and visualize overlapping vs non-overlapping modifications.
+  - Uses a detailed consensus rRNA BED file plus a reference file to identify and visualize overlapping vs non-overlapping modifications.
   - Writes an SVG output named `rRNA_18S_modifications.svg`.
 
 - `figure_6b.py`

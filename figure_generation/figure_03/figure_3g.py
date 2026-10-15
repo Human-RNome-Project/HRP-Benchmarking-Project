@@ -26,7 +26,7 @@ CAP_COLORS = {
 }
 
 #load data file
-df = pd.read_excel("/home/alex/Documents/PHD/RNOME/Paper/MS_quant/Benchmark Ribonucleoside Data Files/HRP_C_009_nucquant_cap_structures.xlsx", skiprows=10, engine="openpyxl")
+df = pd.read_excel("HRP_C_009_cap_structures.xlsx", skiprows=10, engine="openpyxl")
 
 
 # drop all Unnamed columns
