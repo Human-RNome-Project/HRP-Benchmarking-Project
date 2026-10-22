@@ -7,7 +7,8 @@
 # Base image already ships the OpenMS command line tools required by the
 # NASE_rRNA/NASE_tRNA wrappers (DecoyDatabase, NucleicAcidSearchEngine, ...)
 # on PATH. See https://github.com/OpenMS/OpenMS/pkgs/container/openms-executables
-FROM ghcr.io/openms/openms-executables:RNOME
+ARG OPENMS_BASE_IMAGE=ghcr.io/openms/openms-executables:fix_rnome-legacy-bedrmod-export
+FROM ${OPENMS_BASE_IMAGE}
 
 USER root
 
