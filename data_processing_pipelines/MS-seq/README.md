@@ -53,22 +53,30 @@ The folder is divided into five main components:
 
 ## Getting Started
 
-1. **Build our docker container**
+1. **Pull the validated MS-seq image**
 
-A [`Dockerfile`](Dockerfile) is provided that bundles the OpenMS executables (`ghcr.io/openms/openms-executables:RNOME`) with a Python environment and all three pipeline scripts, so a single container can process one input file/sample at a time (e.g. as an HPC array-job task). Docker needs to be already installed on your system.
+The versioned image bundles the OpenMS executables, rRNA and tRNA search settings, and all three pipeline scripts. Its short Kaiser rRNA and tRNA bedRMod outputs were byte-identical to the stage 8 references with 28 search threads. The published image is for Linux/amd64. If the GitHub package is private, authenticate to GHCR before pulling it.
 
 ```bash
-docker build -t hrp-ms-seq:latest .
+HRP_MS_SEQ_IMAGE=ghcr.io/human-rnome-project/hrp-ms-seq:legacy-export-0bd0798-857ad796@sha256:a8ade7b56ec5c2680a6b4aa556f9ee9c446487ba4666586bfe15d8dbbe6e1e88
+docker pull "$HRP_MS_SEQ_IMAGE"
+```
+
+To rebuild locally instead, use the pinned OpenMS base in the [`Dockerfile`](Dockerfile) and the bundled INIs:
+
+```bash
+docker build -t hrp-ms-seq:local .
+HRP_MS_SEQ_IMAGE=hrp-ms-seq:local
 ```
 
 2. **rRNA/tRNA Processing:** Run the command below or follow the detailed instructions in the [`NASE_rRNA/README.md`](NASE_rRNA/README.md) or [`NASE_tRNA/README.md`](NASE_tRNA/README.md) to get the aligned modified fragments.
 
 ```bash
-docker run --rm -v "$PWD":/data hrp-ms-seq:latest rrna \
+docker run --rm -v "$PWD":/data "$HRP_MS_SEQ_IMAGE" rrna \
     /data/sample.mzML /data/ref.fasta \
     --precursor-tolerance <precursor-tolerance> --product-tolerance <product-tolerance> --output-dir /data/results
 
-docker run --rm -v "$PWD":/data hrp-ms-seq:latest trna \
+docker run --rm -v "$PWD":/data "$HRP_MS_SEQ_IMAGE" trna \
     /data/sample.mzML /data/ref.fasta \
     --precursor-tolerance <precursor-tolerance> --product-tolerance <product-tolerance> --output-dir /data/results
 ```
@@ -76,11 +84,11 @@ docker run --rm -v "$PWD":/data hrp-ms-seq:latest trna \
 3. **Filtering and Consensus Modifications:** Run the command below or follow the detailed instructions in the [`MS_consensus_creation/README.md`](MS_consensus_creation/README.md) to extract your modifications.
 
 ```bash
-docker run --rm -v "$PWD":/data hrp-ms-seq:latest consensus \
+docker run --rm -v "$PWD":/data "$HRP_MS_SEQ_IMAGE" consensus \
     --input-folder /data/samples --out-file /data/consensus.bed
 ```
 5. **Help:**
-Run `docker run --rm hrp-ms-seq:latest --help` for the full usage message, or pass `bash` as the mode for an interactive shell.
+Run `docker run --rm "$HRP_MS_SEQ_IMAGE" --help` for the full usage message, or pass `bash` as the mode for an interactive shell.
 
 
 ## Paper Data-Availability
