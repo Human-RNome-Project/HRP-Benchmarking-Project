@@ -8,7 +8,15 @@
 # NASE_rRNA/NASE_tRNA wrappers (DecoyDatabase, NucleicAcidSearchEngine, ...)
 # on PATH. See https://github.com/OpenMS/OpenMS/pkgs/container/openms-executables
 ARG OPENMS_BASE_IMAGE=ghcr.io/openms/openms-executables:fix_rnome-legacy-bedrmod-export@sha256:0d46a20883df968ed4e1e22e83b7680e708829fe610a10df6dd3b469bf54e9bf
+ARG PHASE8_OPENMS_IMAGE=ghcr.io/openms/openms-executables@sha256:f0331d2002d29bc4fc7bc154eb3dc3a3152c8c4b01c4cd37b2474004bda5b7a6
+FROM ${PHASE8_OPENMS_IMAGE} AS phase8_decoy
 FROM ${OPENMS_BASE_IMAGE}
+
+# Stage 8's RNase-aware DecoyDatabase is required by the archived INIs.
+# The newer executable removed the rnase and keep_terminal_nucleotides options.
+COPY --from=phase8_decoy /opt/OpenMS/bin/DecoyDatabase /opt/phase8/OpenMS/bin/DecoyDatabase
+COPY --from=phase8_decoy /opt/OpenMS/lib/ /opt/phase8/OpenMS/lib/
+ENV DECOY_DATABASE_EXECUTABLE=/opt/phase8/OpenMS/bin/DecoyDatabase
 
 USER root
 
