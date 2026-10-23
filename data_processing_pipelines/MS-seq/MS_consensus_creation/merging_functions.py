@@ -14,18 +14,18 @@ def merge_positions_in_sample(df:pd.DataFrame)->pd.DataFrame:
     Returns:
     pd.DataFrame: Aggregated DataFrame with unique positions per sample.
     """
-    merged_df = df.groupby(["chrom", "chromStart", "chromEnd", "name", "strand"]).agg({
-        "score": "min",
-        "thickStart": "first",
-        "thickEnd": "first",
-        "itemRgb": "first",
-        "coverage": "mean",
-        "frequency": "mean",
-        "unique_mapping": "max",
-        "frag_start": "first",
-        "frag_end": "first"
-    }).reset_index()
+    merged_df = df.groupby(["chrom", "chromStart", "chromEnd", "name", "strand"]).agg(
+        score=("score", "min"),
+        thickStart=("thickStart", "first"),
+        thickEnd=("thickEnd", "first"),
+        itemRgb=("itemRgb", "first"),
+        coverage=("coverage", "mean"),
+        frequency=("frequency", "mean"),
+        unique_mapping=("unique_mapping", "max"),
+        spectral_count=("chrom", "size")
+    ).reset_index()
 
+    merged_df= merged_df[["chrom", "chromStart", "chromEnd", "name", "score","strand","thickStart","thickEnd","itemRgb","coverage","frequency","unique_mapping","spectral_count"]]
     return merged_df
 
 
@@ -74,6 +74,7 @@ def create_consensus(dfs: dict[str:pd.DataFrame], min_samples: int = 1) -> pd.Da
         frequency_std=("frequency", lambda x: x.std(ddof=0)),
         scores_std=("score", lambda x: x.std(ddof=0)),
         unique_mapping=("unique_mapping", "max"),
+        norm_spectral_count=("norm_spectral_count","mean"),
         _sample_count=("_sample", "nunique"))
         .reset_index()
     )
@@ -86,8 +87,4 @@ def create_consensus(dfs: dict[str:pd.DataFrame], min_samples: int = 1) -> pd.Da
     #filter for positions that are present in at least 2 samples
     grouped = grouped[grouped["_sample_count"] >= min_samples]
 
-    #count how many samples are called 
-    sample_count = grouped["_samples_with_pos"].value_counts().sort_index()
-    sample_count_list = sample_count.tolist()
-
-    return grouped.drop(columns=["_sample_count", "_samples_with_pos"]),sample_count_list
+    return grouped.drop(columns=["_sample_count", "_samples_with_pos"])

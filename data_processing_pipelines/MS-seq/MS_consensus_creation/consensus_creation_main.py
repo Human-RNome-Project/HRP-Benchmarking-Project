@@ -8,7 +8,7 @@ from helper_functions import load_bedrmod, filter_bedfile_massspec, filter_conse
 from merging_functions import merge_positions_in_sample, create_consensus
 from renaming_functions import reshape_to_final_bed, remove_base_ends
 
-def run_consensus_creation(samples:list,out_file:str,min_samples: int = 1, q_score:float =0.05, freq:float = 10, min_overlap: int = 100, unique_mapping:bool = True, tRNA:bool=False) -> pd.DataFrame:
+def run_consensus_creation(samples:list,out_file:str,min_samples: int = 1, q_score:float =0.05, freq:float = 10, min_overlap: int = 100,norm_spectral_count:int=0, unique_mapping:bool = True, tRNA:bool=False) -> pd.DataFrame:
     """
     Full pipeline: load bedrmod samples, filter and merge per-sample positions, build consensus and write output.
 
@@ -27,23 +27,45 @@ def run_consensus_creation(samples:list,out_file:str,min_samples: int = 1, q_sco
     dfs = {}
     for file_name in samples:
         df,comment_dict = load_bedrmod(file_name)
-        if unique_mapping:
-            df = filter_bedfile_massspec(df, score_threshold=q_score,unique_mapping=1,frequency_threshold=freq)
-        else:
-            df = filter_bedfile_massspec(df, score_threshold=q_score,frequency_threshold=freq)
 
+        if unique_mapping:
+            df = filter_bedfile_massspec(df,unique_mapping=1)
+    
         if tRNA:
             df = remove_base_ends(df)
-        df = merge_positions_in_sample(df)
-        df = df.drop(columns=["frag_start","frag_end"])
-        # coverage is fragment  intensity. This is not comparable to other fragments or equvialent to read coverage. So we set it to 0. 
-        df["coverage"] = 0
+        
+        df = df[~df["chrom"].str.contains("DECOY")]
         #drop Inosine
         df = df[df["name"] != "I"]
-     
+        #drop Pseudouridin, it can not be detected with our method
+        df = df[df["name"] != "Y"]
+        df = df[df["unique_mapping"]==1]
+
+        df = merge_positions_in_sample(df)
+        Q1= df["spectral_count"].quantile(0.25)
+        Q3= df["spectral_count"].quantile(0.75)
+        IQR = Q3-Q1
+        upperbound = Q3+(1.5*IQR)
+
+        df["norm_spectral_count"] = (df["spectral_count"] / upperbound) * 100
+        # coverage is fragment  intensity. This is not comparable to other fragments or equvialent to read coverage. So we set it to 0. 
+        df["coverage"] = 0
+
+        name = out_file.rsplit("/", 1)[0]
+        extension = out_file.rsplit(".", 1)[-1]
+        with open(name+"_merged_fragments."+extension, "w") as f:
+                for key, value in comment_dict.items():
+                    f.write(f"#{key}={value}\n")
+        
+                f.write("#" + "\t".join(filtered_consensus.columns) + "\n")
+        
+                # write BED data
+                df.to_csv(f, sep="\t",header=False,index=False,lineterminator="\n")
+
+        df = filter_bedfile_massspec(df,score_threshold=q_score,frequency_threshold=freq,norm_spectral_count=norm_spectral_count)     
         dfs[file_name] = df
 
-    consensus, sample_count_list = create_consensus(dfs, min_samples=min_samples)
+    consensus = create_consensus(dfs, min_samples=min_samples)
     filtered_consensus = filter_consensus(consensus, min_overlap_perc=min_overlap)
     #filtered_consensus = switch_methylation_naming(filtered_consensus)
 

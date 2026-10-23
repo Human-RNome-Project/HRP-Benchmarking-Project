@@ -2,7 +2,7 @@ import pandas as pd
 
 from renaming_functions import align_chromnames,align_modification_names
 
-def filter_bedfile_massspec(df: pd.DataFrame, chrom:str = None, chromStart:int = None, chromEnd:int = None, score_threshold:float=None,strand:str=None,coverage_threshold:int=None,frequency_threshold:float=None,unique_mapping:int=None,frag_start:int=None,frag_end:int=None) -> pd.DataFrame:
+def filter_bedfile_massspec(df: pd.DataFrame, chrom:str = None, chromStart:int = None, chromEnd:int = None, score_threshold:float=None,strand:str=None,coverage_threshold:int=None,frequency_threshold:float=None,unique_mapping:int=None,frag_start:int=None,frag_end:int=None,norm_spectral_count:int=None) -> pd.DataFrame:
     """
     Filter a bedrmod DataFrame based on specified thresholds.
     Parameters:
@@ -33,6 +33,8 @@ def filter_bedfile_massspec(df: pd.DataFrame, chrom:str = None, chromStart:int =
         df = df[df["frequency"] >= frequency_threshold]
     if unique_mapping is not None:
         df = df[df["unique_mapping"] == unique_mapping]
+    if norm_spectral_count is not None:
+        df = df[df["norm_spectral_count"] == norm_spectral_count]
     if frag_start is not None:
         df = df[df["frag_start"] >= frag_start]
     if frag_end is not None:
