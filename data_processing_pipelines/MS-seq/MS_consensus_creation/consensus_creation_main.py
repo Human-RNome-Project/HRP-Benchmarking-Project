@@ -50,17 +50,19 @@ def run_consensus_creation(samples:list,out_file:str,min_samples: int = 1, q_sco
         df["norm_spectral_count"] = (df["spectral_count"] / upperbound) * 100
         # coverage is fragment  intensity. This is not comparable to other fragments or equvialent to read coverage. So we set it to 0. 
         df["coverage"] = 0
-
+        
         name = out_file.rsplit("/", 1)[0]
-        extension = out_file.rsplit(".", 1)[-1]
-        with open(name+"_merged_fragments."+extension, "w") as f:
-                for key, value in comment_dict.items():
-                    f.write(f"#{key}={value}\n")
-        
-                f.write("#" + "\t".join(filtered_consensus.columns) + "\n")
-        
-                # write BED data
-                df.to_csv(f, sep="\t",header=False,index=False,lineterminator="\n")
+        extension = file_name.rsplit(".", 1)[-1]
+        sample_name = file_name.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+
+        with open(name + "/" + sample_name + "_merged_fragments." + extension, "w") as f:
+            for key, value in comment_dict.items():
+                f.write(f"#{key}={value}\n")
+    
+            f.write("#" + "\t".join(df.columns) + "\n")
+    
+            # write BED data
+            df.to_csv(f, sep="\t",header=False,index=False,lineterminator="\n")
 
         df = filter_bedfile_massspec(df,score_threshold=q_score,frequency_threshold=freq,norm_spectral_count=norm_spectral_count)     
         dfs[file_name] = df
