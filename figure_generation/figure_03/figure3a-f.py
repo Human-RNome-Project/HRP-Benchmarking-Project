@@ -133,11 +133,11 @@ def loader_HRP_C_004_005_006_007_008_010(path:str, type:str):
 
 ##import files
 #All files were generated via the normalization excell sheets provided in the overview; data load can therefore be different since, manual  outputs were generated
-base = "/home/alex/Documents/PHD/RNOME/Paper/MS_quant/Benchmark Ribonucleoside Data Files/"
-HRP_C_004_005_006_007_008_010_details = "/home/alex/Documents/PHD/RNOME/Paper/MS_quant/Y_04-050226.xlsx"
-mean_data = "/home/alex/Documents/PHD/RNOME/Paper/MS_quant/Data compilation for plots HRP manuscript.xlsx"
-HRP_C_021_022_details = "/home/alex/Documents/PHD/RNOME/Paper/MS_quant/Data points HRPC 021_022 lab for manuscript.xlsx"
-HRP_C_003_df = loader_HRP_C_003("/home/alex/Documents/PHD/RNOME/Paper/MS_quant/HRP_C_003_nucquant_all_replicates.xlsx")
+
+HRP_C_004_005_006_007_008_010_details = "HRP-C-004_005_006_007_008_0010_intermediate_results.xlsx"
+mean_data = "HRP-C-mean_std_combined.xlsx"
+HRP_C_021_022_details = "HRP-C-021_022_intermediate_results.xlsx"
+HRP_C_003_df = loader_HRP_C_003("HRP-C-003_intermediate_results.xlsx")
 
 cut_point= 9  
 height_ratio = (1,2)
