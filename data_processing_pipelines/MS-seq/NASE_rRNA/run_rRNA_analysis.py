@@ -10,6 +10,7 @@ are supplied on the command line.
 from __future__ import annotations
 
 import argparse
+import os
 import shlex
 import shutil
 import subprocess
@@ -42,7 +43,8 @@ def nonnegative_float(value: str) -> float:
 
 
 def find_executable(name: str) -> str:
-    executable = shutil.which(name)
+    requested = os.environ.get("DECOY_DATABASE_EXECUTABLE", name) if name == "DecoyDatabase" else name
+    executable = shutil.which(requested)
     if executable is None:
         raise RuntimeError(
             f"Could not find '{name}' on PATH. Activate/install the OpenMS "
@@ -75,17 +77,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("fasta", type=existing_file, help="Input RNA FASTA file")
     parser.add_argument(
         "--precursor-tolerance",
-        required=True,
         type=nonnegative_float,
         metavar="PPM",
-        help="Precursor mass tolerance in ppm",
+        help="Precursor mass tolerance in ppm (default: value in NASE INI)",
     )
     parser.add_argument(
         "--product-tolerance",
-        required=True,
         type=nonnegative_float,
         metavar="PPM",
-        help="Product/fragment ion mass tolerance in ppm",
+        help="Product/fragment ion mass tolerance in ppm (default: value in NASE INI)",
     )
     parser.add_argument(
         "--output-dir",
@@ -153,8 +153,7 @@ def main() -> int:
             ]
         )
 
-        run_command(
-            [
+        search_command = [
                 nase,
                 "-ini",
                 str(args.nase_ini),
@@ -168,12 +167,12 @@ def main() -> int:
                 str(bedrmod_out),
                 "-bedrmod_chebi_mapping",
                 str(args.chebi_mapping),
-                "-precursor:mass_tolerance",
-                str(args.precursor_tolerance),
-                "-fragment:mass_tolerance",
-                str(args.product_tolerance),
             ]
-        )
+        if args.precursor_tolerance is not None:
+            search_command.extend(["-precursor:mass_tolerance", str(args.precursor_tolerance)])
+        if args.product_tolerance is not None:
+            search_command.extend(["-fragment:mass_tolerance", str(args.product_tolerance)])
+        run_command(search_command)
 
     print(f"bedRMod output: {bedrmod_out}")
     return 0
