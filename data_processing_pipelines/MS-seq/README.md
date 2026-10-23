@@ -1,6 +1,6 @@
 # MS-seq Analysis
 
-This directory contains the pipeline modules used to process MS-seq data and identify post-transcriptional RNA modifications across the RNA biotypes rRNA and tRNA. In contrast to the other methods MS-seq technology was not used to analyze poly(A) RNA sequences. With the current technology, the analyzed fragments are to small to align them truthfully to big references, like the whole human transcriptome.
+This directory contains the pipeline modules used to process MS-seq data and identify post-transcriptional RNA modifications across the RNA biotypes rRNA and tRNA. In contrast to the other methods MS-seq technology was not used to analyze poly(A) RNA sequences. With the current technology, the analyzed fragments are too small to align them truthfully to big references, like the whole human transcriptome.
 
 The pipeline is organized into two distinct layers, the Open-MS spectra to sequence mapping and the Consensus creation pipeline, combining aligned fragments and different samples to a consensus modification map.
 
@@ -74,11 +74,11 @@ HRP_MS_SEQ_IMAGE=hrp-ms-seq:local
 ```bash
 docker run --rm -v "$PWD":/data "$HRP_MS_SEQ_IMAGE" rrna \
     /data/sample.mzML /data/ref.fasta \
-    --precursor-tolerance <precursor-tolerance> --product-tolerance <product-tolerance> --output-dir /data/results
+    --precursor-tolerance <precursor-tolerance> --product-tolerance <product-tolerance> --output-dir /data/results/rRNA
 
 docker run --rm -v "$PWD":/data "$HRP_MS_SEQ_IMAGE" trna \
     /data/sample.mzML /data/ref.fasta \
-    --precursor-tolerance <precursor-tolerance> --product-tolerance <product-tolerance> --output-dir /data/results
+    --precursor-tolerance <precursor-tolerance> --product-tolerance <product-tolerance> --output-dir /data/results/tRNA
 ```
 
 3. **Filtering and Consensus Modifications:** Run the command below or follow the detailed instructions in the [`MS_consensus_creation/README.md`](MS_consensus_creation/README.md) to extract your modifications.
