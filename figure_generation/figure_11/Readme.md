@@ -19,15 +19,13 @@ These scripts require the following R packages:
 - R>=4.3.3
 - tidyverse>=2.0.0
 - GenomicFeatures>=1.58.0
-- clusterProfiler>=4.14.0
-- org.Hs.eg.db>=3.20.0
-- UpSetR>=1.4.0
 - patchwork>=1.3.2
 - ggseqlogo>=0.2.2
 - data.table>=1.15.4
 - rtracklayer>=1.66.0
 - qs>=0.26.3
 - ggsci>=3.2.0
+- optparse>=1.8.2
 
 bedtools >=2.31.1 is also needed to get motif from genome FASTAs. 
 

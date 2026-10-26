@@ -2,8 +2,6 @@ suppressPackageStartupMessages({
   library(optparse)
   library(tidyverse)
   library(patchwork)
-  library(clusterProfiler)
-  library(org.Hs.eg.db)
 })
 
 
