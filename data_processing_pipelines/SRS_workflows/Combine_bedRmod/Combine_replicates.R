@@ -37,7 +37,21 @@ fun_merge_rep <- function(fins, fout, min_required_reps = 2) {
               "nRep", "repName", "repScore", "repCov", "repFreq", "method")
   df = df[, all_col] %>% filter(nRep >= min_required_reps)
   colnames(df)[1] = paste0("#", colnames(df)[1])
-  data.table::fwrite(df, fout, sep = "\t")
+
+  meta_lines <- c(
+    "#fileformat=bedRModv2",
+    "#organism=9606",
+    "#modification_type=mRNA",
+    "#modification_names=21891:m6A:A",
+    "#sequencing_plattform=Illumina",
+    "#assembly=GRCh38"
+  )
+
+  # Write meta info first
+  writeLines(meta_lines, con = fout)
+
+  # Then append the data
+  data.table::fwrite(df, fout, sep = "\t", append = TRUE)
 }
 
 

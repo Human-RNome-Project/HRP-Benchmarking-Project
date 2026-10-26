@@ -29,5 +29,6 @@ dependencies:
   - r-base=4.3.3=hf0d99cb_1
   - r-dplyr=1.1.4=r43ha503ecb_0
   - r-data.table=1.14.10=r43h029312a_1
+  - r-optparse=1.8.2=r44hc72bb7e_0
   - pip:
     - multiprocess==0.70.17

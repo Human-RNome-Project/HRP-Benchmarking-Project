@@ -57,7 +57,22 @@ fun_convert_to_bedRmod = function(
   
   df = df[, all_col]
   colnames(df)[1] = paste0("#", colnames(df)[1])
-  data.table::fwrite(df, paste0(outdir, "/", sampleName, ".bed"), sep = "\t")
+
+  meta_lines <- c(
+    "#fileformat=bedRModv2",
+    "#organism=9606",
+    "#modification_type=mRNA",
+    "#modification_names=21891:m6A:A",
+    "#sequencing_plattform=Illumina",
+    "#assembly=GRCh38"
+  )
+
+  # Write meta info first
+  writeLines(meta_lines, con = paste0(outdir, "/", sampleName, ".bed"))
+
+  # Then append the data
+  data.table::fwrite(df, paste0(outdir, "/", sampleName, ".bed"), 
+                    sep = "\t", append = TRUE)
 }
 
 option_list = list(

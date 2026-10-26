@@ -26,7 +26,7 @@ fun_merge_method <- function(fins, fout) {
   df = do.call(rbind, ldf) %>%
     group_by(chrom, chromStart, chromEnd, name, strand, thickStart, thickEnd) %>%
     summarise(
-      score = round(sum(newscore, na.rm = T)/nmeth*10000, 2),
+      score = round(sum(newscore, na.rm = T)/nmeth*1000, 2),
       itemRgb = "0,0,0",
       coverage = sum(coverage, na.rm = T),
       frequency = round(mean(frequency, na.rm = T), 2),
@@ -45,7 +45,21 @@ fun_merge_method <- function(fins, fout) {
               "nRep", "repName", "repScore", "repCov", "repFreq", "method")
   df = df[, all_col]
   colnames(df)[1] = paste0("#", colnames(df)[1])
-  data.table::fwrite(df, fout, sep = "\t")
+
+  meta_lines <- c(
+    "#fileformat=bedRModv2",
+    "#organism=9606",
+    "#modification_type=mRNA",
+    "#modification_names=21891:m6A:A",
+    "#sequencing_plattform=Illumina",
+    "#assembly=GRCh38"
+  )
+
+  # Write meta info first
+  writeLines(meta_lines, con = fout)
+
+  # Then append the data
+  data.table::fwrite(df, fout, sep = "\t", append = TRUE)
 }
 
 

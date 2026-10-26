@@ -3,7 +3,7 @@
 # Data Download Instructions
 We will begin by downloading the SRS raw sequencing data based on the metadata available from the [DOE Data Explorer](https://doi.org/10.25585/DOE-HRP/3377574).
 
-1. Open the **Raw Data** tab, followed by the **Metadata** tab, and download `HRP_Metadata_A_LRS.tsv`. In the metadata table, select samples with `mRNA` in the `Sample type` column and either `HRP_B_007` or `HRP_B_033` in the `submission_id` column.
+1. Open the **Raw Data** tab, followed by the **Metadata** tab, and download `HRP_Metadata_B_SRS.tsv`. In the metadata table, select samples with `mRNA` in the `Sample type` column and either `HRP_B_007` or `HRP_B_033` in the `submission_id` column.
 
 2. The `HRP_B_007` dataset was generated using GLORI. Samples `HRP_B_007_1`, `HRP_B_007_2`, and `HRP_B_007_3` represent three mRNA replicates. Read 1 (R1) corresponds to the sense strand of the transcripts.
 
@@ -18,7 +18,7 @@ conda env create -f GLORI_pipeline.yml
 conda activate GLORI_pipeline
 ```
 
-You will also need the GLORI-DUO-tools scripts, which could be found as `GLORI-DUO-tools.zip`. You could also download it from [GLORI-DUO-tools](https://github.com/ZedekiahZhou/GLORI-DUO-tools)
+You will also need the GLORI-DUO-tools scripts, which could be found as `GLORI-DUO-tools.zip`. You could also download it from [GLORI-DUO-tools (branch zz-patch-1, c0a7d8d0)](https://github.com/ZedekiahZhou/GLORI-DUO-tools)
 
 
 # Input
