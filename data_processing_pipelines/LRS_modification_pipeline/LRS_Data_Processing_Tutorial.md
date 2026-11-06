@@ -11,6 +11,7 @@ In this step, we will download the raw data files generated directly by the sequ
 1. Open your web browser and navigate to the project's data repository: 
    [https://doi.org/10.25585/DOE-HRP/3377574](https://doi.org/10.25585/DOE-HRP/3377574)
 2. Follow the instructions on the portal to download the raw Long-Read Sequencing files (typically `.pod5` format).
+   - Also download the sample metadata sheet, **`HRP_MetaData_A_LRS.tsv`**, from the portal. This file details sample IDs, biological conditions, flow cell details, and sequencing parameters. *(Note: `HRP_MetaData_A_LRS.tsv` is hosted on the data repository portal and is not tracked directly in this GitHub repository).*
 3. Save these files into a dedicated directory on your local machine or high-performance computing (HPC) cluster. For this tutorial, we will assume you saved them in `/path/to/pod5_dir`.
 
 > [!TIP]
@@ -43,7 +44,7 @@ We use the `cd` (change directory) command to move between folders in the termin
    ```
 2. Next, navigate deep into the data processing folders where the LRS WDL pipelines live:
    ```bash
-   cd data_processing_pipelines/LRS_Reanalysis/wdl-pipelines-main/LRS/
+   cd data_processing_pipelines/LRS_modification_pipeline/wdl-pipelines-main/LRS/
    ```
 
 You will see three folders here: `rRNA_pipeline`, `polyA_pipeline`, and `tRNA_pipeline`. For this tutorial, we will use the **rRNA pipeline** as an example, but the steps are nearly identical for the others. Move into that folder:
@@ -59,15 +60,22 @@ cd rRNA_pipeline
 
 Before running the pipeline, we must create a configuration file that tells it where your raw data is located. WDL (Workflow Description Language) pipelines act like automated assembly lines, so they need a standardized set of instructions (formatted as a JSON file) to know exactly which files to process and what to name the outputs.
 
-We have provided a helpful bash script to generate this file automatically. To demonstrate this on a real sample from our dataset, we will use **`HRP_A_017_native_rRNA_001`** (you can find this sample ID and its biological details in the `HRP_MetaData_A_LRS.tsv` metadata sheet).
+We have provided a helpful bash script to generate this file automatically. To demonstrate this on a real sample from our dataset, we will use **`HRP_A_017_native_rRNA_001`** (you can find this sample ID and its biological details in the `HRP_MetaData_A_LRS.tsv` metadata sheet downloaded from the data repository in Step 1).
 
-Run the following command, replacing `/path/to/pod5_dir` with the actual folder where you downloaded this specific sample's data:
+1. First, create the `rRNA` directory where the script will save the output configuration file:
+   ```bash
+   mkdir -p rRNA
+   ```
+   *(Note: The script outputs to `rRNA/inputs_<SAMPLE_ID>.json` and runs with `set -e`, which will fail if the `rRNA` directory does not already exist).*
 
-```bash
-./generate_rRNA_inputs.sh /path/to/pod5_dir HRP_A_017_native_rRNA_001
-```
+2. Run the following command, replacing `/path/to/pod5_dir` with the actual folder where you downloaded this specific sample's data:
+
+   ```bash
+   ./generate_rRNA_inputs.sh /path/to/pod5_dir HRP_A_017_native_rRNA_001
+   ```
 
 **Understanding the command:**
+- `mkdir -p rRNA` creates the destination directory for the generated JSON configuration file.
 - `./generate_rRNA_inputs.sh` executes a small program (a bash script) that we wrote for you.
 - `/path/to/pod5_dir` is the first input to the script. It tells the script where you saved your downloaded data in Step 1.
 - `HRP_A_017_native_rRNA_001` is the second input. This is the exact sample ID from the metadata sheet, which the script will use to appropriately name all of your final output files.
@@ -85,7 +93,7 @@ If you are running this locally (not on a supercomputer like Perlmutter), ensure
 
 ```bash
 # Dorado basecaller
-docker pull ontresearch/dorado@sha256:c8f356489fa8b44b31beba841b84d2879de2088e
+docker pull ontresearch/dorado:shac8f356489fa8b44b31beba841b84d2879de2088e
 
 # Seqtagger demultiplexing
 docker pull lpryszcz/seqtagger:latest
@@ -97,7 +105,7 @@ docker pull nanozoo/minimap2:2.28--9e3bd01
 docker pull luxendr13/nanocomp:0.6.0
 
 # Modkit modification calling
-docker pull ontresearch/modkit@sha256:489d708a48c66368e5d1e118538e5dca68203a64
+docker pull ontresearch/modkit:sha489d708a48c66368e5d1e118538e5dca68203a64
 ```
 
 **Understanding the command:**
