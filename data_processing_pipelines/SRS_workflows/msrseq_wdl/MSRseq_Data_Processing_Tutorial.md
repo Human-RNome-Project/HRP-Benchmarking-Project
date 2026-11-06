@@ -91,7 +91,7 @@ Let's look at what is inside this directory:
 - `msrseq_pipeline.wdl`: The master workflow blueprint written in WDL.
 - `docker/`: Contains the `Dockerfile` recipe and all standalone scripts.
 - `ref/`: Subdirectory containing the three required human tRNA reference files.
-- `inputs_msrseq_local.json` (and `inputs_msrseq_gcp.json`): Ready-to-run configuration templates configured with local relative paths.
+- `inputs_msrseq_local.json`: A ready-to-run configuration template configured with local relative paths.
 - `inputs_msrseq_perlmutter.json`: Template configured with NERSC Perlmutter CFS paths.
 - `README.md`: Quick reference guide for the pipeline.
 
@@ -117,8 +117,8 @@ mkdir -p raw_msrseq
 | File Name | Condition / Treatment | Replicate | Barcode | Target Modifications |
 |---|---|:---:|:---:|---|
 | `raw_msrseq/HRP_B_012_1_R2.fastq.gz` | `HRPC_CBH` | 1 | `bc8` | $ac^4C, f^5C$ (mutation signature) |
-| `raw_msrseq/HRP_B_012_2_R2.fastq.gz` | `HRPC_CBH` | 2 | `bc9` | $ac^4C, f^5C$ (mutation signature) |
-| `raw_msrseq/HRP_B_012_3_R2.fastq.gz` | `HRPC_CBH` | 3 | `bc10` | $ac^4C, f^5C$ (mutation signature) |
+| `raw_msrseq/HRP_B_012_3_R2.fastq.gz` | `HRPC_CBH` | 2 | `bc9` | $ac^4C, f^5C$ (mutation signature) |
+| `raw_msrseq/HRP_B_012_2_R2.fastq.gz` | `HRPC_CBH` | 3 | `bc10` | $ac^4C, f^5C$ (mutation signature) |
 | `raw_msrseq/HRP_B_012_4_R2.fastq.gz` | `HRPC_BS` | 1 | `bc8` | $\Psi, m^7G, Gm$ (deletion signature) |
 | `raw_msrseq/HRP_B_012_5_R2.fastq.gz` | `HRPC_ctrl` | 1 | `bc8` | Untreated baseline ($m^1A, m^1G, m^2_2G, \dots$) |
 | `raw_msrseq/HRP_B_012_6_R2.fastq.gz` | `HRPC_BS` | 2 | `bc9` | $\Psi, m^7G, Gm$ (deletion signature) |
@@ -127,7 +127,7 @@ mkdir -p raw_msrseq
 | `raw_msrseq/HRP_B_012_9_R2.fastq.gz` | `HRPC_ctrl` | 3 | `bc10` | Untreated baseline ($m^1A, m^1G, m^2_2G, \dots$) |
 
 > [!TIP]
-> By downloading the FASTQ files directly into `raw_msrseq/` with these filenames, you do **not need to edit any paths** in `inputs_msrseq_local.json` or `inputs_msrseq_gcp.json`!
+> By downloading the FASTQ files directly into `raw_msrseq/` with these filenames, you do **not need to edit any paths** in `inputs_msrseq_local.json`!
 
 ---
 
@@ -160,9 +160,9 @@ The three required reference files are already bundled in the repository inside 
 
 Because these files are already in `ref/`, you do not need to download or search for them.
 
-### 5.2 The Input JSON (`inputs_msrseq_local.json` / `inputs_msrseq_gcp.json`)
+### 5.2 The Input JSON (`inputs_msrseq_local.json`)
 
-The template file `inputs_msrseq_local.json` (and `inputs_msrseq_gcp.json`) uses relative directory paths. Because the reference files are in `ref/` and your FASTQ files are in `raw_msrseq/`, this file works directly out-of-the-box:
+The template file `inputs_msrseq_local.json` uses relative directory paths. Because the reference files are in `ref/` and your FASTQ files are in `raw_msrseq/`, this file works directly out-of-the-box:
 
 ```json
 {
@@ -289,8 +289,6 @@ miniwdl run msrseq_pipeline.wdl \
   --dir run_output \
   --verbose
 ```
-
-*(You can also specify `-i inputs_msrseq_gcp.json`, which points to the same local relative paths.)*
 
 **Understanding the command:**
 - `miniwdl run`: Starts the workflow execution engine.

@@ -60,7 +60,6 @@ msrseq_wdl/
 │   ├── ...
 │   └── HRP_B_012_9_R2.fastq.gz
 ├── inputs_msrseq_local.json        # Template with relative paths
-├── inputs_msrseq_gcp.json          # Template for GCP / cloud execution
 └── inputs_msrseq_perlmutter.json   # Template with NERSC CFS paths
 ```
 
@@ -81,7 +80,7 @@ Save files named `HRP_B_012_1_R2.fastq.gz` through `HRP_B_012_9_R2.fastq.gz`.
 
 ## Input JSON Preparation
 
-### Local / Cloud Execution (`inputs_msrseq_local.json` or `inputs_msrseq_gcp.json`)
+### Local / Cloud Execution (`inputs_msrseq_local.json`)
 Because reference files are in `ref/` and FASTQs are in `raw_msrseq/`, the provided JSON works immediately out-of-the-box without modifying any paths:
 
 ```json
@@ -177,7 +176,6 @@ miniwdl run \
   --dir run_output \
   --verbose
 ```
-*(Or use `-i inputs_msrseq_gcp.json`)*
 
 ### Run on NERSC Perlmutter with JAWS
 ```bash
