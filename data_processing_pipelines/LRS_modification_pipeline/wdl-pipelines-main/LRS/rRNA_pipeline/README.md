@@ -5,32 +5,38 @@ This directory contains the WDL workflows and input generator for processing ONT
 ## Workflows
 
 | WDL file | Workflow namespace | Purpose |
-|---|---|---|
-| `pipeline_SCATTER_jaws_rRNA.wdl` | `ont_rRNA` | Full pipeline from POD5 to aligned BAMs and Modkit pileups: Seqtagger demux → Dorado basecalling → BAM merge → Minimap2 genome + transcriptome alignment → NanoComp QC → Modkit pileup |
+| :---- | :---- | :---- |
+| `pipeline_SCATTER_jaws_rRNA.wdl` | `ont_rRNA` | Full pipeline from POD5 to aligned BAMs and Modkit pileups: Seqtagger demux → Dorado basecalling → BAM merge → Minimap2 genome \+ transcriptome alignment → NanoComp QC → Modkit pileup |
 | `pipeline_rRNA_bam_merge_modkit_SCATTER.wdl` | `ont_rRNA_merge_modkit_grid` | Merge multiple aligned rRNA BAMs and run Modkit pileup across a grid of modification probability thresholds |
 
 ## Requirements
 
 ### Workflow engine
+
 You need a WDL-compatible execution backend. The production runs used **JAWS** on Perlmutter, but the workflows can also be run with **Cromwell** or **miniwdl** locally.
 
 Examples:
+
 - JAWS: `jaws submit --no-cache <wdl> <inputs.json> perlmutter --tag <tag>`
 - Cromwell: `java -jar cromwell.jar run <wdl> -i <inputs.json>`
 - miniwdl: `miniwdl run <wdl> --input <inputs.json>`
 
 ### Docker
+
 All tasks run inside Docker containers. The executor must be able to pull the images listed below. If you are running offline, pull them beforehand.
 
 ### Input data
-- For `pipeline_SCATTER_jaws_rRNA.wdl`: POD5 files, GRCh38 reference genome FASTA, human rRNA reference transcriptome FASTA, Dorado model directory
-- For `pipeline_rRNA_bam_merge_modkit_SCATTER.wdl`: aligned/sorted rRNA BAM files + indices, reference transcriptome FASTA, array of Modkit probability thresholds
+
+POD5 files can be downloaded at the DOE Data Explorer [https\://doi.org/10.25585/DOE-HRP/3377574](https://doi.org/10.25585/DOE-HRP/3377574). In the “HRP\_Metadata\_A\_LRS.tsv” metadata sheet located in the Raw data Metadata folder, refer to the “RNA\_biotype” column and filter for "total\_RNA" in the “RNA\_biotype” column. Download the POD5 files with the matching sample IDs in the DOE Data Explorer Raw Data Long-read Sequencing folder.
+
+- For `pipeline_SCATTER_jaws_rRNA.wdl`: POD5 files, GRCh38 reference genome FASTA (can be found in DOE Data Explorer Raw data References folder), human rRNA reference transcriptome FASTA (can be found in DOE Data Explorer Raw data References folder), Dorado model directory
+- For `pipeline_rRNA_bam_merge_modkit_SCATTER.wdl`: aligned/sorted rRNA BAM files \+ indices, reference transcriptome FASTA, array of Modkit probability thresholds
 
 ## Docker images
 
 The workflows use the following container images. Pull commands are provided for convenience.
 
-```bash
+```sh
 # Dorado basecaller
 # Image used by task DoradoBasecall in pipeline_SCATTER_jaws_rRNA.wdl
 docker pull ontresearch/dorado@sha256:c8f356489fa8b44b31beba841b84d2879de2088e
@@ -60,13 +66,13 @@ docker pull ontresearch/modkit@sha256:489d708a48c66368e5d1e118538e5dca68203a64
 
 Use the provided generator script:
 
-```bash
+```sh
 ./generate_rRNA_inputs.sh <POD5_DIR> <SAMPLE_ID>
 ```
 
 Example:
 
-```bash
+```sh
 ./generate_rRNA_inputs.sh \
   /path/to/pod5_dir \
   sample_id
@@ -74,9 +80,9 @@ Example:
 
 This writes `rRNA/inputs_<SAMPLE_ID>.json`. The script hardcodes rRNA reference paths and the Dorado model directory; edit the script if your environment differs.
 
-### Merge + threshold-grid Modkit
+### Merge \+ threshold-grid Modkit
 
-There is no generator script for this workflow. Hand-write an input JSON using this template:
+There is no generator script for this workflow. The aligned sorted BAM files and BAM file indices used below are obtained from the "call-MinimapGenome" step from the previous command. Hand-write an input JSON using this template:
 
 ```json
 {
@@ -103,7 +109,7 @@ The example above uses 15 modification probability thresholds.
 
 ### Run the full pipeline from POD5
 
-```bash
+```sh
 jaws submit \
   --no-cache \
   pipeline_SCATTER_jaws_rRNA.wdl \
@@ -112,9 +118,9 @@ jaws submit \
   --tag "<sample>_rRNA_run"
 ```
 
-### Run the merge + threshold-grid workflow
+### Run the merge \+ threshold-grid workflow
 
-```bash
+```sh
 jaws submit \
   --no-cache \
   pipeline_rRNA_bam_merge_modkit_SCATTER.wdl \
@@ -126,6 +132,7 @@ jaws submit \
 ## Outputs
 
 ### `pipeline_SCATTER_jaws_rRNA.wdl`
+
 - `merged_bam`, `merged_bai` — merged basecalled BAM
 - `genome_bam`, `genome_bai` — genome-aligned BAM
 - `transcriptome_bam`, `transcriptome_bai` — transcriptome-aligned BAM
@@ -134,7 +141,10 @@ jaws submit \
 - `nanocomp_report` — NanoComp QC report tarball
 
 ### `pipeline_rRNA_bam_merge_modkit_SCATTER.wdl`
+
 - `merged_bam`, `merged_bai` — merged input BAMs
 - `modkit_beds` — array of Modkit pileup BEDs, one per threshold
 - `modkit_logs` — array of Modkit logs, one per threshold
 - `nanocomp_report` — NanoComp QC report tarball
+
+The outputs produced here will be utilized to run the next set of pipelines in [`format_conversion_and_merging/`](http://format_conversion_and_merging/)`liftover_to_BedRMod.py.`

@@ -19,26 +19,37 @@ wdl-pipelines-main/
 
 ## Overview of Pipelines
 
-Each subfolder contains specific WDL workflows designed for the unique alignment and sequence analysis characteristics of each RNA biotype:
+Each subfolder contains specific WDL workflows designed for the unique alignment and sequence analysis characteristics of each RNA biotype, which can be run in any order:
 
-### 1. [polyA_pipeline](LRS/polyA_pipeline/)
+### 1\. [polyA\_pipeline](http://LRS/polyA_pipeline/)
+
 - **Target:** Direct RNA sequencing datasets targeting polyadenylated mRNAs.
 - **Workflow Highlights:**
   - `pipeline_SCATTER_jaws.wdl`: A full end-to-end pipeline executing demultiplexing (`Seqtagger`), high-accuracy basecalling with modification output (`Dorado`), quality control reporting (`NanoComp`), genome/transcriptome alignment (`Minimap2`), and modification frequency estimation (`Modkit`).
   - `pipeline_polyA_bam_merge_modkit_SCATTER.wdl`: Merges multiple BAM outputs and generates `Modkit` pileups across a grid of custom modification probability thresholds.
 
-### 2. [rRNA_pipeline](LRS/rRNA_pipeline/)
+### 2\. [rRNA\_pipeline](http://LRS/rRNA_pipeline/)
+
 - **Target:** Direct RNA sequencing datasets targeting cytosolic and mitochondrial ribosomal RNAs.
 - **Workflow Highlights:**
   - `pipeline_SCATTER_jaws_rRNA.wdl`: Performs end-to-end basecalling and alignment against a custom human rRNA reference sequence database.
   - `pipeline_rRNA_bam_merge_modkit_SCATTER.wdl`: Aggregates the rRNA basecalled alignments and runs `Modkit` pileups across a grid of modification probability thresholds.
 
-### 3. [tRNA_pipeline](LRS/tRNA_pipeline/)
+### 3\. [tRNA\_pipeline](http://LRS/tRNA_pipeline/)
+
 - **Target:** Direct RNA sequencing datasets targeting mature transfer RNAs (tRNAs).
 - **Workflow Highlights:**
   - `pipeline_SCATTER_jaws_tRNA_KJ.wdl`: Performs scattered basecalling on raw POD5 inputs, outputs a demultiplexing table, and merges files to produce sample-level unaligned BAMs.
   - `tRNA_realign_JM.wdl`: Re-aligns unaligned tRNA reads to a specialized tRNA transcriptome reference containing 3' CCA tails using custom alignment settings optimized for short, heavily-modified tRNA reads, and runs `Modkit`.
   - `pipeline_tRNA_bam_merge_modkit_SCATTER.wdl`: Merges sample tRNA alignments and generates `Modkit` pileups across multiple probability thresholds.
+
+---
+
+## Identifying LRS Samples & Reference Files
+
+We will start by downloading the LRS raw data using the LRS metadata spreadsheet in the DOE Data Explorer Raw data Metadata folder [https\://doi.org/10.25585/DOE-HRP/3377574](https://doi.org/10.25585/DOE-HRP/3377574). Depending on the RNA biotype desired (polyA, total\_RNA, or tRNA), download the “HRP\_Metadata\_A\_LRS.tsv”, refer to the “RNA\_biotype” column on the metadata and select the desired RNA type (polyA, total\_RNA, or tRNA). Note the sample IDs corresponding to the desired RNA type samples, which will be used to download the corresponding data at the DOE Data Explorer Raw Data folder.
+
+The reference and support files will be located on the DOE Data Explorer [https\://doi.org/10.25585/DOE-HRP/3377574](https://doi.org/10.25585/DOE-HRP/3377574) Raw data References folder.
 
 ---
 

@@ -11,8 +11,8 @@ fi
 
 POD5_DIR=$1
 SAMPLE_ID=$2
-REF_GENOME="/global/cfs/cdirs/m5243/references/GRCh38.primary_assembly.genome.fa"
-REF_TX="/global/cfs/cdirs/m5243/references/hs_rRNAs_NR_046235.fa"
+REF_GENOME="/global/cfs/cdirs/m5243/references/hs_rRNAs_NR_046235.fa"
+REF_TX="/global/cfs/cdirs/m5243/references/longest_gencode.v49.transcripts.fa"
 CPUS=12
 BARCODED=false
 BARCODING_MODEL="b04_RNA004"
