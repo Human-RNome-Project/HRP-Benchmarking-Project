@@ -54,7 +54,7 @@ msrseq_wdl/
 ├── ref/                            # Bundled tRNA reference files
 │   ├── Step1_260_seq_hg38-mature-tRNAs.fa
 │   ├── hg38_chromosomal_tRNA_genes_high_confidence_intro_remove+CCA_upper_case2.fa
-│   └── Table S3_cyto all isodecoders3.xlsx
+│   └── Table_S3_cyto_all_isodecoders3.xlsx
 ├── raw_msrseq/                     # User-created directory for raw FASTQ files
 │   ├── HRP_B_012_1_R2.fastq.gz
 │   ├── ...
@@ -67,7 +67,9 @@ msrseq_wdl/
 The three required reference files are already bundled in the `ref/` subdirectory:
 - `ref/Step1_260_seq_hg38-mature-tRNAs.fa`
 - `ref/hg38_chromosomal_tRNA_genes_high_confidence_intro_remove+CCA_upper_case2.fa`
-- `ref/Table S3_cyto all isodecoders3.xlsx`
+- `ref/Table_S3_cyto_all_isodecoders3.xlsx`
+
+*(Note: These reference files can also be found on the project data repository at https://doi.org/10.25585/DOE-HRP/3377574 under the `/Raw data/References/` folder).*
 
 ### 2. FASTQ Files (`raw_msrseq/`)
 Create a `raw_msrseq/` directory inside `msrseq_wdl/` and save the 9 demultiplexed Read 2 FASTQ files from the project data portal:
@@ -87,7 +89,7 @@ Because reference files are in `ref/` and FASTQs are in `raw_msrseq/`, the provi
 {
   "msrseq_pipeline.mature_trna_fasta": "ref/Step1_260_seq_hg38-mature-tRNAs.fa",
   "msrseq_pipeline.chromosomal_trna_fasta": "ref/hg38_chromosomal_tRNA_genes_high_confidence_intro_remove+CCA_upper_case2.fa",
-  "msrseq_pipeline.isodecoder_table": "ref/Table S3_cyto all isodecoders3.xlsx",
+  "msrseq_pipeline.isodecoder_table": "ref/Table_S3_cyto_all_isodecoders3.xlsx",
   "msrseq_pipeline.docker_image": "msrseq-pipeline:v1",
   "msrseq_pipeline.ref_cpus": 8,
   "msrseq_pipeline.sample_cpus": 8,

@@ -84,7 +84,7 @@ Move your terminal into the folder where the MSR-seq pipeline lives:
 
 ```bash
 cd HRP-benchmarking-project
-cd pipelines/SRS_workflows/msrseq_wdl
+cd data_processing_pipelines/SRS_workflows/msrseq_wdl
 ```
 
 Let's look at what is inside this directory:
@@ -152,13 +152,18 @@ docker build -t msrseq-pipeline:v1 docker/
 
 ## Step 5: Reference Files and the Input JSON
 
+Before launching the workflow, the pipeline needs a configuration file (in **JSON** format) that lists:
+1. The reference sequence files.
+2. The annotation table.
+3. The list of samples and their raw FASTQ files.
+
 ### 5.1 Reference Files in `ref/`
 The three required reference files are already bundled in the repository inside the `ref/` subdirectory:
 1. **`ref/Step1_260_seq_hg38-mature-tRNAs.fa`**: High-confidence mature tRNA sequences (260 distinct sequences with 3' CCA tails).
 2. **`ref/hg38_chromosomal_tRNA_genes_high_confidence_intro_remove+CCA_upper_case2.fa`**: Genomic tRNA gene reference sequences used to map relative tRNA coordinates to chromosomes.
-3. **`ref/Table S3_cyto all isodecoders3.xlsx`**: Annotation spreadsheet mapping each tRNA isodecoder to its cytosolic/mitochondrial identity, anticodon, and known modifications.
+3. **`ref/Table_S3_cyto_all_isodecoders3.xlsx`**: Annotation spreadsheet mapping each tRNA isodecoder to its cytosolic/mitochondrial identity, anticodon, and known modifications.
 
-Because these files are already in `ref/`, you do not need to download or search for them.
+Because these files are already in `ref/`, you do not need to download or search for them. *(Note: These reference files can also be found on the project data repository at [https://doi.org/10.25585/DOE-HRP/3377574](https://doi.org/10.25585/DOE-HRP/3377574) under the `/Raw data/References/` folder).*
 
 ### 5.2 The Input JSON (`inputs_msrseq_local.json`)
 
@@ -168,7 +173,7 @@ The template file `inputs_msrseq_local.json` uses relative directory paths. Beca
 {
   "msrseq_pipeline.mature_trna_fasta": "ref/Step1_260_seq_hg38-mature-tRNAs.fa",
   "msrseq_pipeline.chromosomal_trna_fasta": "ref/hg38_chromosomal_tRNA_genes_high_confidence_intro_remove+CCA_upper_case2.fa",
-  "msrseq_pipeline.isodecoder_table": "ref/Table S3_cyto all isodecoders3.xlsx",
+  "msrseq_pipeline.isodecoder_table": "ref/Table_S3_cyto_all_isodecoders3.xlsx",
   "msrseq_pipeline.docker_image": "msrseq-pipeline:v1",
   "msrseq_pipeline.ref_cpus": 8,
   "msrseq_pipeline.sample_cpus": 8,

@@ -1,7 +1,7 @@
 {
   "msrseq_pipeline.mature_trna_fasta": "ref/Step1_260_seq_hg38-mature-tRNAs.fa",
   "msrseq_pipeline.chromosomal_trna_fasta": "ref/hg38_chromosomal_tRNA_genes_high_confidence_intro_remove+CCA_upper_case2.fa",
-  "msrseq_pipeline.isodecoder_table": "ref/Table S3_cyto all isodecoders3.xlsx",
+  "msrseq_pipeline.isodecoder_table": "ref/Table_S3_cyto_all_isodecoders3.xlsx",
   "msrseq_pipeline.docker_image": "msrseq-pipeline:v1",
   "msrseq_pipeline.ref_cpus": 8,
   "msrseq_pipeline.sample_cpus": 8,
