@@ -74,7 +74,7 @@ This writes a single-sample input JSON under `polyA_RNA/inputs_<sample_id>.json`
 
 ### Merge \+ threshold-grid Modkit
 
-There is no generator script for this workflow. Hand-write an input JSON using this template:
+There is no generator script for this workflow. The aligned sorted BAM files and BAM file indices used below are obtained from the "call-MinimapGenome" step from the previous command. Hand-write an input JSON using this template:
 
 ```json
 {
