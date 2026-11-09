@@ -2,7 +2,7 @@
 
 This directory contains the pre-processing chain that turns raw paired-end eTAM-seq FASTQ files
 into the per-site **annotated pileup tables** (`<sample>.annot.txt`) consumed downstream by the
-R pipelines (`/pipeline.R`).
+R pipeline (`../pipeline.R`).
 
 The chain does three things: it cleans and stitches the read pairs (adapters, UMI, overlap
 merging), it maps the stitched reads with **hisat-3n** in A→G three-letter mode and deduplicates
@@ -18,16 +18,18 @@ Repository side (`/PreProcess/`):
 - `run`                                # Master driver: loops over the samples, trims, stitches, calls the two other scripts
 - `2_map_and_count_stitched_reads.sh`  # rRNA + genome mapping with hisat-3n, dedup, conversion filter, pileup2var
 - `annotPileupRev`                     # Perl: strand-aware mpileup A/G counting + GenBank annotation
+- `3_make_metadata.sh`                 # Copies the mRNA/IVT `.annot.txt` tables to the layout read by `../pipeline.R`
+- `HRP_B_002_fastq.md5`                # md5 of the 32 input FASTQ files (`md5sum -c`)
 - `README.md`                          # Contains project documentation
 
 Data side (the working directory where `run` is launched, one level **below** this folder):
 
-- `fq/`                                # Input FASTQ files, `<sample>_L?_R[12]_???.fastq.gz`
+- `fq/`                                # Input FASTQ files, `<sample>_L<lane>_R[12]_001.fastq.gz` (flat or one sub-folder per sample)
 - `outstitch/<sample>/`                # BAMs, stats, pileup2var tables (`$hisat3n_out_dir`)
 - `<sample>.annot.txt`                 # Final annotated table, written in the working directory
 - `<sample>.a3a5trim.umi.round[12].log`, `<sample>.a3a5trim.umi.log`  # cutadapt / umi_tools logs
 
-Reference side (`$REF_DIR`, **parameter**; default `/home/h/OneDrive/Unil/data/b38`):
+Reference side (`$REF_DIR`, **required argument**, no default):
 
 - `b38.fa.gz`                          # Genome sequence, bgzipped (mpileup / annotPileupRev)  ✔ present
 - `GB/*.gb.gz`                         # RefSeq GenBank flat files, one per chromosome         ✔ present
@@ -35,9 +37,7 @@ Reference side (`$REF_DIR`, **parameter**; default `/home/h/OneDrive/Unil/data/b
 - `HS_rep/b38*`                        # hisat-3n genome index                                 ✘ to rebuild
 - `HS_rep/hs_rrna*`, `hs_rrna.fa`      # hisat-3n rRNA index and its FASTA                     ✘ to rebuild
 
-The reference folder : see *Reference data: where to get it* below for
-what the local copy contains, how to obtain the missing files, and the variables that point to
-them.
+The reference folder : reference files can be downloaded at the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder.
 
 ### Expected layout at run time
 
@@ -63,6 +63,7 @@ dataset folder, and falls back to `../annotPileupRev` otherwise (`ANNOT_PL` over
 |------|---------|
 | `run` | Sample loop. Two rounds of `cutadapt`, UMI extraction (`umi_tools extract`), read stitching (`NGmerge`), then calls `2_map_and_count_stitched_reads.sh` and `annotPileupRev`. Skips a sample whose final filtered BAM already exists, and `break`s the whole loop at the first error. |
 | `2_map_and_count_stitched_reads.sh` | Takes one sample name as `$1`. Maps the stitched reads on the rRNA index then on the genome with `hisat-3n --base-change A,G`, keeps uniquely mapped reads (MAPQ ≥ 60), deduplicates on the UMI, filters reads by their A→G conversion rate, and produces the `pileup2var` conversion tables. Deletes the intermediate BAMs at the end. |
+| `3_make_metadata.sh` | `./3_make_metadata.sh <annot_dir> <data_dir>`: copies `Rnome-mRNA-<N>.annot.txt` to `<data_dir>/ETAM_RNA_mrna/metadata/metadata_form_mRNA_<N>.tsv` and `Rnome-IVT-<N>.annot.txt` to `<data_dir>/ETAM_RNA_IVT/metadata/metadata_form_IVT_<N>.tsv`, content unchanged. `Rnome-FTO*` are skipped (not used by `pipeline.R`). |
 | `annotPileupRev` | Reads the GenBank flat files (stdin or `.gb` arguments), builds a per-position annotation of every A of every transcript, then runs two strand-restricted `samtools mpileup` passes on the final BAM and prints one line per covered A site with its A/G counts and annotation. |
 
 ## Requirements & Setup
@@ -72,18 +73,25 @@ dataset folder, and falls back to `../annotPileupRev` otherwise (`ANNOT_PL` over
 No Conda environment or Docker image is used: the tools must be on the `PATH` of the machine
 running the pipeline.
 
-**Versions used for the reference run** — reproduce these before comparing new results to the
-existing tables:
+**Versions to use** (released versions; install them before comparing new results to the
+existing tables):
 
 | Tool | Version | Used by | Note |
 |------|---------|---------|------|
-| `cutadapt` | `4.6.dev2+g3407ac0` | `run` | Development build, not a released 4.6; `-j 0` = all cores |
+| `cutadapt` | `4.6` | `run` | `-j 0` = all cores |
 | `umi_tools` | `1.1.4` | `run` (extract), `2_map_…sh` (dedup) | |
 | `NGmerge` | `0.3` | `run` | Read stitching |
-| `hisat-3n` | `hisat2-align-s 2.2.1-3n-0.0.3` | `2_map_…sh` | Default path `$HOME/src/github/hisat-3n/hisat-3n`, overridden by `HISAT3N` |
-| `samtools` | `1.16.1-78-g4b247ef` | `2_map_…sh`, `annotPileupRev` | Git build between 1.16.1 and 1.17; ≥ 1.12 is needed for the `-e` filter expressions on the `Yf`/`Zf` tags |
+| `hisat-3n` | `hisat2-align-s 2.2.1-3n-0.0.3` | `2_map_…sh` | Taken from the `PATH`, or from `HISAT3N` |
+| `samtools` | `1.17` | `2_map_…sh`, `annotPileupRev` | ≥ 1.12 is needed for the `-e` filter expressions on the `Yf`/`Zf` tags |
 | `pileup2var` | `1.1.0` | `2_map_…sh` | Must be on the `PATH` |
 | `perl` | system perl | `annotPileupRev` | Core modules only (`strict`, `warnings`) |
+
+`run` checks that the tools are on the `PATH` and prints a warning when `cutadapt` or `samtools`
+is not the version above. Example installation with Conda (bioconda):
+
+```bash
+conda create -n etam -c conda-forge -c bioconda cutadapt=4.6 samtools=1.17 umi_tools=1.1.4 ngmerge=0.3
+```
 
 Version check:
 
@@ -91,7 +99,7 @@ Version check:
 cutadapt --version
 umi_tools --version
 NGmerge --version
-~/src/github/hisat-3n/hisat-3n --version
+hisat-3n --version
 samtools --version
 pileup2var --version
 ```
@@ -112,15 +120,29 @@ hisat-3n indexes (tens of GB with the repeat index).
 
 ### Data Download Instructions
 
-FASTQ files are not in this repository. You can download the FASTQ files from the RNome Data Explorer "Short-read Sequencing" folder under the "Raw Data" folder. The files needed for this pipeline correspond to the sample "HRP_B_002". After downloading, these FASTQ files are expected in `$FQ_DIR` (`fq/` by default) of the
-working directory, with the Illumina-style naming used by the glob patterns of `run`. The
-reference files come from `$REF_DIR` — where to download or rebuild each of them is detailed in
-*Reference data: where to get it*.
+FASTQ files are not in this repository: FASTQ files can be downloaded at the DOE Data Explorer Raw data folder https://doi.org/10.25585/DOE-HRP/3377574. Download the **HRP_B_002** dataset and put its FASTQ
+files in `$FQ_DIR` (`fq/` by default) of the working directory. They can stay flat or in the
+per-sample sub-folders of the download (`ivt1/`, `rna1/`, …): `run` looks two levels deep.
+Check the download with:
+
+```bash
+cd fq && find . -name '*.fastq.gz' -exec md5sum {} + | sed 's#  .*/#  #' | sort -k2 | diff - ../HRP_B_002_fastq.md5
+```
+
+(no output = all 32 files present and intact; ≈ 107 GB in total). 8 samples, 2 lanes, paired-end:
+
+| Sample (`SAMPLES`) | Group | Files |
+|--------------------|-------|-------|
+| `Rnome-mRNA-1`, `Rnome-mRNA-2`, `Rnome-mRNA-3` | mRNA (methylated) | `<sample>_L1_R1_001.fastq.gz`, `<sample>_L1_R2_001.fastq.gz`, `<sample>_L2_R1_001.fastq.gz`, `<sample>_L2_R2_001.fastq.gz` |
+| `Rnome-IVT-1`, `Rnome-IVT-3` | IVT (unmethylated control; there is no `IVT-2`) | same pattern |
+| `Rnome-FTO1`, `Rnome-FTO2`, `Rnome-FTO3` | FTO-treated | same pattern |
+
+The reference files come from `$REF_DIR` — download from the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder.
 
 | Input File | Description | File Type/Format | Script Usage |
 |------------|-------------|------------------|--------------|
-| `$FQ_DIR/<sample>_L?_R1_???.fastq.gz` | Read 1 of every lane of the sample | gzipped FASTQ | `run` (concatenated on the fly with `gzip -dc`) |
-| `$FQ_DIR/<sample>_L?_R2_???.fastq.gz` | Read 2 (carries the 6 nt UMI at its 5′ end) | gzipped FASTQ | `run` |
+| `$FQ_DIR/[<subdir>/]<sample>_L<lane>_R1_001.fastq.gz` | Read 1 of every lane of the sample | gzipped FASTQ | `run` (lanes concatenated on the fly with `gzip -dc`) |
+| `$FQ_DIR/[<subdir>/]<sample>_L<lane>_R2_001.fastq.gz` | Read 2 (carries the 6 nt UMI at its 5′ end) | gzipped FASTQ | `run` |
 | `$REF_DIR/HS_rep/hs_rrna*` | hisat-3n rRNA index | hisat-3n index | `2_map_…sh`, rRNA depletion pass |
 | `$REF_DIR/hs_rrna.fa` | rRNA sequences | FASTA | `samtools stats`, `pileup2var` |
 | `$REF_DIR/HS_rep/b38*` | hisat-3n genome index (GRCh38) | hisat-3n index | `2_map_…sh`, genome pass |
@@ -135,13 +157,12 @@ the missing file and the current `REF_DIR`.
 
 #### Paths: the `REF_DIR` parameter
 
-Every reference path comes from a single variable, `REF_DIR`, which can be given three ways
-(first one wins):
+Every reference path comes from a single variable, `REF_DIR`, which is **required** and can be
+given two ways (first one wins); without it, `run` stops with its usage line:
 
 ```bash
 ./run /path/to/b38                     # 1. first argument of run
 REF_DIR=/path/to/b38 ./run             # 2. environment variable
-./run                                  # 3. default: /home/h/OneDrive/Unil/data/b38
 ```
 
 `run` exports `REF_DIR` (and `GENOME_INDEX_NAME`, `NCPUS`), so
@@ -152,12 +173,12 @@ Variables of `run` (all `${VAR:-default}`, so any of them can be exported before
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
-| `REF_DIR` | `/home/h/OneDrive/Unil/data/b38` | Root of the reference data |
+| `REF_DIR` | **required** | Root of the reference data |
 | `GENOME_FA_GZ` | `$REF_DIR/b38.fa.gz` | Bgzipped genome given to `annotPileupRev` |
 | `GB_DIR` | `$REF_DIR/GB` | Folder of the `*.gb.gz` GenBank records |
 | `GENOME_INDEX_NAME` | `b38` | Index name, also part of every output file name |
-| `FQ_DIR` | `fq` | Input FASTQ folder |
-| `SAMPLES` | the 8 `Rnome-*` samples | Space-separated sample list |
+| `FQ_DIR` | `fq` | Input FASTQ folder (files searched two levels deep) |
+| `SAMPLES` | the 8 HRP_B_002 samples (`Rnome-FTO1` … `Rnome-mRNA-3`) | Space-separated sample list = FASTQ prefixes |
 | `NCPUS` | `24` | Threads (NGmerge here, mapping/sorting downstream) |
 | `MAP_SH` | `./2_map_and_count_stitched_reads.sh` | Mapping script |
 | `ANNOT_PL` | `./annotPileupRev` if executable, else `../annotPileupRev` | Annotation script |
@@ -166,8 +187,8 @@ Variables of `2_map_and_count_stitched_reads.sh`:
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
-| `REF_DIR` (or 2nd argument) | `/home/h/OneDrive/Unil/data/b38` | Root of the reference data |
-| `HISAT3N` | `$HOME/src/github/hisat-3n/hisat-3n` | hisat-3n executable |
+| `REF_DIR` (or 2nd argument) | **required** | Root of the reference data |
+| `HISAT3N` | `hisat-3n` (from the `PATH`) | hisat-3n executable |
 | `REP_INDEX` / `REP_INDEX_NAME` | `$REF_DIR/HS_rep/hs_rrna` / `hs_rrna` | rRNA index |
 | `GENOME_INDEX` / `GENOME_INDEX_NAME` | `$REF_DIR/HS_rep/b38` / `b38` | Genome index |
 | `REP_FA` / `GENOME_FA` | `$REF_DIR/hs_rrna.fa` / `$REF_DIR/b38.fa` | Uncompressed FASTA |
@@ -176,7 +197,8 @@ Variables of `2_map_and_count_stitched_reads.sh`:
 | `NCPUS`, `A2G_PERCENT`, `COV`, `STRANDNESS` | `24`, `0.5`, `1`, `R` | See the table below |
 
 `annotPileupRev` takes the genome FASTA as its second argument (what `run` does) or from the
-`GENOME_FA_GZ` environment variable; and it stops if the FASTA is missing instead of failing later in the pileup.
+`GENOME_FA_GZ` environment variable (no default); it stops if neither is given or if the file is
+missing, instead of failing later in the pileup.
 
 #### Other parameters
 
@@ -212,20 +234,21 @@ the 7 nt window of the `context` column are hardcoded.
 
 ### Reference data: where to get it
 
-The folder used by default, `/data/b38`, is the local copy of the server's
-`/data6/b38`. It currently holds **only the two files that cannot be regenerated quickly**:
+These can be found can be downloaded at the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder. 
 
-| File | State | What it is |
+`REF_DIR` must hold the files below. The two that cannot be regenerated quickly:
+
+| File | Size | What it is |
 |------|-------|------------|
-| `b38.fa.gz` | present (≈ 970 MB, bgzip) | GRCh38 genome, UCSC-style names (`>chr1`, …) |
-| `GB/NC_0000{01..24}.gb.gz` | present (24 files) | RefSeq records of chr1–22, X (`NC_000023`), Y (`NC_000024`), assembly GRCh38.p12 |
+| `b38.fa.gz` | ≈ 970 MB, bgzip | GRCh38 genome, UCSC-style names (`>chr1`, …) |
+| `GB/NC_0000{01..24}.gb.gz` | 24 files | RefSeq records of chr1–22, X (`NC_000023`), Y (`NC_000024`), assembly GRCh38.p12 |
 
 Note that `GB/` has **no chrM record** (`NC_012920`): mitochondrial sites get no annotation.
 
 The three remaining files are built from those, or downloaded:
 
 ```bash
-REF=/home/h/OneDrive/Unil/data/b38
+REF=/path/to/b38
 
 # 1. b38.fa -- uncompressed genome, needed by pileup2var and samtools stats (~3 GB)
 gzip -dc $REF/b38.fa.gz > $REF/b38.fa
@@ -240,8 +263,8 @@ efetch -db nuccore -id NR_046235.3,NR_023363.1 -format fasta > $REF/hs_rrna.fa  
 # 3. hisat-3n indexes (A,G three-letter mode); the genome one takes hours and a lot of RAM
 #    (the repeat index is what --repeat --repeat-limit 1000 needs at mapping time)
 mkdir -p $REF/HS_rep
-~/src/github/hisat-3n/hisat-3n-build --base-change A,G -p 24 $REF/hs_rrna.fa $REF/HS_rep/hs_rrna
-~/src/github/hisat-3n/hisat-3n-build --base-change A,G -p 24 --repeat-index $REF/b38.fa $REF/HS_rep/b38
+hisat-3n-build --base-change A,G -p 24 $REF/hs_rrna.fa $REF/HS_rep/hs_rrna
+hisat-3n-build --base-change A,G -p 24 --repeat-index $REF/b38.fa $REF/HS_rep/b38
 ```
 
 Where the reference files come from, if the copy has to be rebuilt from scratch:
@@ -265,12 +288,7 @@ For another organism, point `REF_DIR` at a folder with the same five entries and
 
 ### References/Accessory files
 
-Annotation comes from the RefSeq GenBank records, not from a GTF. Only the records whose
-`DEFINITION` line matches `… chromosome <name>[.,]` are processed: **unplaced scaffolds and
-records without that wording are silently skipped**. The features used are `CDS`, `mRNA`,
-`misc_RNA`, `ncRNA`, `precursor_RNA`, `rRNA` and `tRNA`; `CDS` takes precedence over the others
-for a position annotated twice, and features described with `order(...)`, or with a
-`complement(...)` inside a `join(...)`, are skipped.
+These can be found can be downloaded at the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder. Annotation comes from the RefSeq GenBank records, not from a GTF. Only the records whose `DEFINITION` line matches `… chromosome <name>[.,]` are processed: **unplaced scaffolds and records without that wording are silently skipped**. The features used are `CDS`, `mRNA`, `misc_RNA`, `ncRNA`, `precursor_RNA`, `rRNA` and `tRNA`; `CDS` takes precedence over the others for a position annotated twice, and features described with `order(...)`, or with a `complement(...)` inside a `join(...)`, are skipped.
 
 ## Usage/Step-wise Execution
 
@@ -280,18 +298,24 @@ Everything is launched from the dataset folder, which holds `run`,
 
 ```bash
 mkdir -p /path/to/work/dataset
-cp /home/h/PycharmProjects/Unil/PreProcess/annotPileupRev /path/to/work/
-cp /home/h/PycharmProjects/Unil/PreProcess/{run,2_map_and_count_stitched_reads.sh} /path/to/work/dataset/
-cd /path/to/work/dataset      # then put the FASTQ files in fq/
-chmod +x run 2_map_and_count_stitched_reads.sh ../annotPileupRev
+cp Rnome/PreProcess/annotPileupRev /path/to/work/
+cp Rnome/PreProcess/{run,2_map_and_count_stitched_reads.sh,3_make_metadata.sh,HRP_B_002_fastq.md5} /path/to/work/dataset/
+cd /path/to/work/dataset      # then put the HRP_B_002 FASTQ files in fq/
+chmod +x run 2_map_and_count_stitched_reads.sh 3_make_metadata.sh ../annotPileupRev
 
-./run                                            # default REF_DIR
-./run /home/h/OneDrive/Unil/data/b38             # explicit reference folder
-REF_DIR=/data6/b38 SAMPLES="S2R Y14a" ./run      # other reference folder and sample list
+./run /path/to/b38                                        # all 8 samples
+REF_DIR=/path/to/b38 SAMPLES="Rnome-mRNA-1 Rnome-IVT-1" ./run   # subset of the samples
+
+./3_make_metadata.sh . /path/to/data_dir                  # hand-off to the R pipeline
+Rscript ../pipeline.R /path/to/data_dir
 ```
 
 The first line of the log recalls which reference folder is in use; if a file is missing there,
 both scripts stop immediately and name it.
+
+**Step 0: Checks** — `REF_DIR` given, reference files present, tools on the `PATH` (warning if
+`cutadapt` ≠ 4.6 or `samtools` ≠ 1.17); for each sample, at least one R1 file and as many R2
+as R1 files, otherwise the loop stops.
 
 **Step 1: Adapter trimming, round 1** — `cutadapt` removes the 5′ adapter of R1 (`-g`) and the
 3′ adapter of R2 (`-A`), quality-trims at Q6 and requires R2 ≥ 46 nt. All the lanes of the
@@ -339,6 +363,11 @@ This split is what makes the counting strand-aware on a reverse-stranded library
 appearing on the unexpected strand makes the script `die`, which is an intentional sanity check.
 Sites with `nbA + nbG < 10` are not printed.
 
+**Step 10: Hand-off to the R pipeline** — `./3_make_metadata.sh . /path/to/data_dir` copies the
+mRNA and IVT tables under the names read by `../pipeline.R`, then
+`Rscript ../pipeline.R /path/to/data_dir`. The files are identical to the `.annot.txt`; R reads
+the `nbA+G` column as `nbA.G`.
+
 ## Outputs
 
 | Output File | Format | Script | Description |
@@ -353,6 +382,7 @@ Sites with `nbA + nbG < 10` are not printed.
 | `<sample>.a3a5trim.umi.round1.log` / `.round2.log` | Text | `run` | cutadapt reports |
 | `<sample>.a3a5trim.umi.log` | Text | `run` | `umi_tools extract` report |
 | `<sample>.stitched.fq.gz` | gzipped FASTQ | `run` | Stitched reads given to the mapper |
+| `<data_dir>/ETAM_RNA_{mrna,IVT}/metadata/metadata_form_<group>_<N>.tsv` | TSV with header | `3_make_metadata.sh` | Copies of the mRNA / IVT `.annot.txt`, input of `../pipeline.R` |
 
 Columns of `<sample>.annot.txt`:
 
@@ -371,5 +401,6 @@ Columns of `<sample>.annot.txt`:
 | `gene` | Gene symbol from the GenBank `/gene=` qualifier |
 
 These are exactly the columns expected by the downstream R pipelines (`chr`, `pos`, `nt`,
+`context`, `nbA`, `nbG`, `nbA.G`, `kind`, `gene`).
 `context`, `nbA`, `nbG`, `nbA.G`, `kind`, `gene`).
 
