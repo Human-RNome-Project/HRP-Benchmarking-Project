@@ -13,11 +13,11 @@ start=$(date +%s)
 # All the reference files live under $ref_dir. Override it from the environment
 # (REF_DIR=/path/to/b38 ./run) or as the second argument of this script.
 # See README.md ("Reference data: where to get it") for the expected content.
-ref_dir=${2:-${REF_DIR:-/home/h/OneDrive/Unil/data/b38}}
+ref_dir=${2:-${REF_DIR:-}}
 # sample fastq file path
 fastq_dir=${FASTQ_DIR:-.}
-# hisat-3n executable
-hisat3n_bin=${HISAT3N:-$HOME/src/github/hisat-3n/hisat-3n}
+# hisat-3n executable (taken from the PATH unless HISAT3N is set)
+hisat3n_bin=${HISAT3N:-hisat-3n}
 # hisat-3n rRNA index name: e.g., rRNA
 hisat3n_rep_index_name=${REP_INDEX_NAME:-hs_rrna}
 # hisat-3n rRNA index path
@@ -45,8 +45,12 @@ strandness=${STRANDNESS:-R}
 # here R2 reads were used.
 sample_r2_fq_file=$fastq_dir/$sample.stitched.fq.gz
 
-if [[ -z $sample ]]; then
-	echo "usage: $0 <sample> [ref_dir]   (ref_dir defaults to \$REF_DIR)" >&2
+if [[ -z $sample || -z $ref_dir ]]; then
+	echo "usage: $0 <sample> <ref_dir>   (or REF_DIR=/path/to/b38 $0 <sample>)" >&2
+	exit 1
+fi
+if ! command -v "$hisat3n_bin" > /dev/null; then
+	echo "hisat-3n not found: '$hisat3n_bin' (put it on the PATH or set HISAT3N)" >&2
 	exit 1
 fi
 
