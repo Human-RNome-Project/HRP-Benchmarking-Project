@@ -1,0 +1,2 @@
+jaws submit --no-cache pipeline_LRS_tRNA.wdl tRNA_inputs_tRNA_example_1_sup.json perlmutter --tag "tRNA_sup_example"
+jaws submit --no-cache pipeline_LRS_tRNA.wdl tRNA_inputs_tRNA_example_1_fast.json perlmutter --tag "tRNA_fast_example"
