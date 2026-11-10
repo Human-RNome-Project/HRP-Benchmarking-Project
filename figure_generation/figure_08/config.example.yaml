@@ -13,7 +13,7 @@
 
 defaults:
   # GTF is parsed once and cached across analyses that share the same path.
-  gtf: /global/cfs/cdirs/m5243/references/gencode.v49.basic.annotation.gtf
+  gtf: $NERSC/references/gencode.v49.basic.annotation.gtf
   output_dir: biotype_results
   # Column used to sort the composition table (falls back to total signal
   # if the column is absent).
@@ -33,22 +33,22 @@ analyses:
     # base dir for this dataset (kept here only for readability; paths below
     # are the full paths actually used).
     counts:
-      HRP_A_001_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_001_native_polyA_RNA_001.merged.aligned.sorted.tsv
-      HRP_A_002_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_002_native_polyA_RNA_001.merged.aligned.sorted.tsv
-      HRP_A_003_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_003_native_polyA_RNA_001.merged.aligned.sorted.tsv
-      HRP_A_005_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_005_native_polyA_RNA_001.merged.aligned.sorted.tsv
-      HRP_A_006_4: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_006_native_polyA_RNA_004.merged.aligned.sorted.tsv
-      HRP_A_007_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_007_native_polyA_RNA_001.merged.aligned.sorted.tsv
-      HRP_A_009_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_009_native_polyA_RNA_001.merged.aligned.sorted.tsv
-      HRP_A_009_2: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_009_native_polyA_RNA_002.merged.aligned.sorted.tsv
-      HRP_A_010_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_010_native_polyA_RNA_001.merged.aligned.sorted.tsv
-      HRP_A_010_2: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_010_native_polyA_RNA_002.merged.aligned.sorted.tsv
-      HRP_A_011_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_011_native_polyA_RNA_001.merged.aligned.sorted.tsv
-      HRP_A_011_2: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_011_native_polyA_RNA_002.merged.aligned.sorted.tsv
-      HRP_A_011_3: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_011_native_polyA_RNA_003.merged.aligned.sorted.tsv
-      HRP_A_013_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_013_native_polyA_RNA_001.merged.aligned.sorted.tsv
-      HRP_A_014_1: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/HRP_A_014_native_polyA_RNA_001.merged.aligned.sorted.tsv
-    combined: /global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/polyA_native_merged.merged.tsv
+      HRP_A_001_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_001_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_002_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_002_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_003_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_003_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_005_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_005_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_006_4: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_006_native_polyA_RNA_004.merged.aligned.sorted.tsv
+      HRP_A_007_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_007_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_009_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_009_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_009_2: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_009_native_polyA_RNA_002.merged.aligned.sorted.tsv
+      HRP_A_010_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_010_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_010_2: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_010_native_polyA_RNA_002.merged.aligned.sorted.tsv
+      HRP_A_011_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_011_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_011_2: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_011_native_polyA_RNA_002.merged.aligned.sorted.tsv
+      HRP_A_011_3: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_011_native_polyA_RNA_003.merged.aligned.sorted.tsv
+      HRP_A_013_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_013_native_polyA_RNA_001.merged.aligned.sorted.tsv
+      HRP_A_014_1: $NERSC/final_bedRmods/ont/read_count_tables/HRP_A_014_native_polyA_RNA_001.merged.aligned.sorted.tsv
+    combined: $NERSC/final_bedRmods/ont/read_count_tables/polyA_native_merged.merged.tsv
     table_name: gene_type_composition_polyA.tsv
     # Two figures, matching the original: combined-only, then all samples.
     plots:
@@ -70,14 +70,14 @@ analyses:
   # -------------------------------------------------------------------
   - name: rRNA
     counts:
-      HRP_A_006_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_SUP_Gerber_native_rRNA_251118_r1_v1.merged.aligned.sorted.tsv
-      HRP_A_017_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_rRNA_native_rep1.merged.aligned.sorted.tsv
-      HRP_A_017_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_rRNA_native_rep2.merged.aligned.sorted.tsv
-      HRP_A_017_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_rRNA_native_rep3.merged.aligned.sorted.tsv
-      HRP_A_018_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_Eppendorf_Rep1.merged.aligned.sorted.tsv
-      HRP_A_018_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_Eppendorf_Rep2.merged.aligned.sorted.tsv
-      HRP_A_018_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_Eppendorf_Rep3.merged.aligned.sorted.tsv
-    combined: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/merged_rRNA_samples.tsv
+      HRP_A_006_2: $NERSC/analysis/unaligned_rRNA_bams/native_rRNA_SUP_Gerber_native_rRNA_251118_r1_v1.merged.aligned.sorted.tsv
+      HRP_A_017_1: $NERSC/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_rRNA_native_rep1.merged.aligned.sorted.tsv
+      HRP_A_017_2: $NERSC/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_rRNA_native_rep2.merged.aligned.sorted.tsv
+      HRP_A_017_3: $NERSC/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_rRNA_native_rep3.merged.aligned.sorted.tsv
+      HRP_A_018_1: $NERSC/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_Eppendorf_Rep1.merged.aligned.sorted.tsv
+      HRP_A_018_2: $NERSC/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_Eppendorf_Rep2.merged.aligned.sorted.tsv
+      HRP_A_018_3: $NERSC/analysis/unaligned_rRNA_bams/native_rRNA_Novoa_Eppendorf_Rep3.merged.aligned.sorted.tsv
+    combined: $NERSC/analysis/unaligned_rRNA_bams/merged_rRNA_samples.tsv
     # This GTF differs from the default; override it here.
     gtf: /home/stefan/Synology/Data_jamboree/final_bedRmods/ont/unaligned_rRNA_bams/combined_v49_rRNAs.gtf
     output_dir: biotype_results/rRNA
@@ -107,26 +107,25 @@ analyses:
   # -------------------------------------------------------------------
   - name: tRNA
     counts:
-      HRP_A_004_1:   /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/native_tRNA_SUP_ADAMCZYK_M_NATIVE_tRNA_003_final_merge.tsv
-      HRP_A_006_1:   /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/native_tRNA_SUP_GERBER_ONT_native_tRNA_final_merge.tsv
-      HRP_A_012_1:   /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/native_tRNA_SUP_Soares_ONT_native_tRNA_final_merge.tsv
-      HRP_A_020_1_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_1_native_tRNA_001_final_merge.tsv
-      HRP_A_020_1_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_1_native_tRNA_002_final_merge.tsv
-      HRP_A_020_1_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_1_native_tRNA_003_final_merge.tsv
-      HRP_A_020_2_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_2_native_tRNA_001_final_merge.tsv
-      HRP_A_020_2_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_2_native_tRNA_002_final_merge.tsv
-      HRP_A_020_2_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_2_native_tRNA_003_final_merge.tsv
-      HRP_A_020_3_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_3_native_tRNA_001_final_merge.tsv
-      HRP_A_020_3_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_3_native_tRNA_002_final_merge.tsv
-      HRP_A_020_3_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_3_native_tRNA_003_final_merge.tsv
-      HRP_A_021_1_1: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_021_1_native_tRNA_001_final_merge.tsv
-      HRP_A_021_1_2: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_021_1_native_tRNA_002_final_merge.tsv
-      HRP_A_021_1_3: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_021_1_native_tRNA_003_final_merge.tsv
-    combined: /global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/combined_dataset_final_merge.tsv
-    gtf: /mnt/data01/stpastore/final_bedRmods/unaligned_tRNA_bams/combined_v49_rRNAs_tRNAs.gtf
+      HRP_A_004_1:   $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/native_tRNA_SUP_ADAMCZYK_M_NATIVE_tRNA_003_final_merge.tsv
+      HRP_A_006_1:   $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/native_tRNA_SUP_GERBER_ONT_native_tRNA_final_merge.tsv
+      HRP_A_012_1:   $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/native_tRNA_SUP_Soares_ONT_native_tRNA_final_merge.tsv
+      HRP_A_020_1_1: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_1_native_tRNA_001_final_merge.tsv
+      HRP_A_020_1_2: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_1_native_tRNA_002_final_merge.tsv
+      HRP_A_020_1_3: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_1_native_tRNA_003_final_merge.tsv
+      HRP_A_020_2_1: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_2_native_tRNA_001_final_merge.tsv
+      HRP_A_020_2_2: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_2_native_tRNA_002_final_merge.tsv
+      HRP_A_020_2_3: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_2_native_tRNA_003_final_merge.tsv
+      HRP_A_020_3_1: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_3_native_tRNA_001_final_merge.tsv
+      HRP_A_020_3_2: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_3_native_tRNA_002_final_merge.tsv
+      HRP_A_020_3_3: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_020_3_native_tRNA_003_final_merge.tsv
+      HRP_A_021_1_1: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_021_1_native_tRNA_001_final_merge.tsv
+      HRP_A_021_1_2: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_021_1_native_tRNA_002_final_merge.tsv
+      HRP_A_021_1_3: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/HRP_A_021_1_native_tRNA_003_final_merge.tsv
+    combined: $NERSC/analysis/unaligned_rRNA_bams/realigned_bams/combined_dataset_final_merge.tsv
+    gtf: $NERSC/final_bedRmods/unaligned_tRNA_bams/combined_v49_rRNAs_tRNAs.gtf
     output_dir: biotype_results/tRNA
     table_name: gene_type_composition_tRNA.tsv
-    font_preset: small
     # Rename the raw tRNA/rRNA gene_type labels to short amino-acid_anticodon
     # names (see the original script for the full intent).
     relabel:
