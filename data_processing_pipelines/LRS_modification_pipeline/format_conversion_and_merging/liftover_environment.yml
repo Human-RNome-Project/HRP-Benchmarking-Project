@@ -23,6 +23,6 @@ channels:
 
 dependencies:
   - python>=3.9
-  - polars>=0.20
+  - polars>=1.0,<2
   - numpy>=1.23
   - tqdm>=4.64
