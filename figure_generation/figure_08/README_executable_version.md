@@ -32,7 +32,7 @@ The tool can be run in two modes: a single run driven by command-line flags, or 
 
 **Single run:**
 ```bash
-python biotype_analysis.py \
+python biotype_analysis_executable.py \
     --name <label> \
     --counts <sample1.tsv> <sample2.tsv> ... \
     --gtf <annotation.gtf> \
@@ -48,10 +48,10 @@ python biotype_analysis.py \
 
 **Batch run (recommended for reproducibility):**
 ```bash
-python biotype_analysis.py --config config.example.yaml
+python biotype_analysis_executable.py --config config.example.yaml
 ```
 
-Run `python biotype_analysis.py --help` at any time to see this list with current defaults.
+Run `python biotype_analysis_executable.py --help` at any time to see this list with current defaults.
 
 ### Arguments
 
@@ -89,7 +89,7 @@ For batch mode, each analysis in the config accepts the same options as keys, pl
 
 **Single polyA run** (explicit sample names, combined column, default palette):
 ```bash
-python biotype_analysis.py \
+python biotype_analysis_executable.py \
     --name polyA \
     --counts S001.tsv S002.tsv S003.tsv \
     --names HRP_A_001_1 HRP_A_002_1 HRP_A_003_1 \
@@ -100,7 +100,7 @@ python biotype_analysis.py \
 
 **tRNA run** (built-in parser, relabel map, top-8 biotypes, small fonts):
 ```bash
-python biotype_analysis.py \
+python biotype_analysis_executable.py \
     --name tRNA \
     --counts tRNA_*.tsv \
     --combined combined_dataset_final_merge.tsv \
@@ -115,7 +115,7 @@ python biotype_analysis.py \
 
 **Batch run** reproducing the polyA, rRNA and tRNA analyses at once:
 ```bash
-python biotype_analysis.py --config config.example.yaml
+python biotype_analysis_executable.py --config config.example.yaml
 ```
 
 ## Output
