@@ -74,7 +74,7 @@ dmode
 ### Using Conda
 
 ```bash
-conda create -f environment_modtype_composition.yml
+conda env create -f environment_modtype_composition.yml
 conda activate modtype_composition
 ```
 
