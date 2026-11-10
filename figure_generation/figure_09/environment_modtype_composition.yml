@@ -16,7 +16,7 @@
 # the requirement below if the project publishes it under a different name or
 # from a private index / VCS URL, e.g.:
 #     - dmode @ git+https://<host>/<org>/dmode.git
-name: rnome
+name: modtype_composition
 channels:
   - conda-forge
   - bioconda
