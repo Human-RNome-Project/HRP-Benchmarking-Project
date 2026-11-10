@@ -2,7 +2,7 @@
 
 This directory contains `liftover_to_BedRMod.py`, a command-line tool that harmonises and merges one or more [bedRMod](https://github.com/anmol25081/bedrmod) files coming from different RNA types (mRNA, tRNA, rRNA) and sequencing technologies (Illumina, ONT, MS) into a single, standardised bedRMod file. It loads each input file (auto-detecting the column layout), normalises modification names to a canonical vocabulary, remaps chromosome/reference names to UCSC-style identifiers, optionally corrects tRNA coordinates for ONT adapter offsets, concatenates all files, appends single-letter modification codes and numeric modification IDs, merges the per-file metadata headers, and writes one combined bedRMod file.
 
-## Enviroment setup
+## Environment setup
 
 The tool requires a Python 3.9+ environment with `polars`, `numpy` and `tqdm` (`argparse` is part of the standard library). A Conda environment file, `liftover_environment.yml`, is provided.
 
