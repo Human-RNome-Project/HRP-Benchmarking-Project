@@ -31,6 +31,113 @@ The script reads two kinds of input, both referenced by absolute paths written d
 
 The three RNA classes read from different base directories and GTFs, all hard-coded in the source (e.g. `/global/cfs/cdirs/m5243/...`, `/home/stefan/Synology/...`, `/mnt/data01/stpastore/...`). **These paths must be edited to match your system before running.**
 
+## Read Alignment and Biotype Quantification
+
+This section starts from unaligned BAM (uBAM) files produced by basecalling. Biotype analysis needs **two separate alignment strategies**:
+
+- **rRNA and poly(A) RNA**: standard spliced long-read alignment to the genome.
+- **tRNA**: short, highly structured reads need much more sensitive minimap2 settings. They are aligned first to a combined rRNA/tRNA reference. Reads that don't align there are then aligned to the genome.
+
+### Requirements
+
+- [samtools](http://www.htslib.org/)
+- [minimap2](https://github.com/lh3/minimap2)
+- [featureCounts](https://subread.sourceforge.net/) (Subread package)
+- References:
+  - `hg38.fa`: human genome
+  - `hg38.rtRNA.with_oligos.fa`: rRNA + tRNA sequences, including adapter oligos
+  - `combined_v49_rRNAs.gtf`: annotation including rRNA features
+
+---
+
+### 1. Alignment for rRNA and poly(A) libraries
+
+```bash
+samtools fastq -T "*" in.ubam \
+  | minimap2 -y --MD -t 5 -ax splice-ont -uf -k14 $NERSC/references/hg38.fa - \
+  | samtools sort -@ 2 \
+  | samtools view --threads 2 -hb -F 260 \
+  > out.aligned.sorted.bam
+```
+
+| Option | Purpose |
+|---|---|
+| `samtools fastq -T "*"` | Converts uBAM to FASTQ and keeps all read tags |
+| `minimap2 -y` | Copies the tags into the alignment output |
+| `-ax splice-ont -uf -k14` | Spliced alignment for ONT direct RNA, forward-strand only |
+| `-F 260` | Removes unmapped (4) and secondary (256) alignments |
+
+---
+
+### 2. Alignment for tRNA libraries
+
+#### 2.1 Align to the rRNA/tRNA reference
+
+```bash
+samtools fastq -T "*" in.ubam \
+  | minimap2 -y -ax splice -t 5 -k 7 -w 3 -A 2 -B 1 -O1,32 -E2,0 -n 1 -m 13 -s 30 \
+      --secondary=no --MD $NERSC/references/hg38.rtRNA.with_oligos.fa - \
+  | samtools sort -@ 5 \
+  | samtools view --threads 5 -hb \
+  > out.rtRNA.all.sorted.bam
+```
+
+The small k-mer/window sizes (`-k 7 -w 3`), relaxed scoring and low chaining/score thresholds (`-m 13 -s 30`) let minimap2 seed and align short tRNA reads.
+
+#### 2.2 Split aligned and unaligned reads
+
+```bash
+# Reads aligned to rRNA/tRNA
+samtools view -hb -F 4 out.rtRNA.all.sorted.bam > out.rtRNA.aligned.sorted.bam
+
+# Unaligned reads, passed on to genome alignment
+samtools view -hb -f 4 out.rtRNA.all.sorted.bam > out.rtRNA.unaligned.sorted.bam
+```
+
+#### 2.3 Align the remaining reads to the genome
+
+```bash
+samtools fastq -T "*" out.rtRNA.unaligned.sorted.bam \
+  | minimap2 -y --MD -t 5 -ax splice-ont -uf -k14 $NERSC/references/hg38.fa - \
+  | samtools sort -@ 2 \
+  | samtools view --threads 2 -hb -F 260 \
+  > out.genome.aligned.sorted.bam
+```
+
+#### 2.4 Merge both alignments
+
+```bash
+samtools merge -@ 5 -f out.aligned.sorted.bam \
+  out.rtRNA.aligned.sorted.bam \
+  out.genome.aligned.sorted.bam
+```
+
+---
+
+### 3. Quantification with featureCounts
+
+Use the same command for every library type:
+
+```bash
+featureCounts -L -T 50 \
+  -a combined_v49_rRNAs.gtf \
+  -o out.aligned.sorted.tsv \
+  out.aligned.sorted.bam
+```
+
+`-L` turns on long-read mode, which is required for nanopore data.
+
+---
+
+### Output overview
+
+| File | Description |
+|---|---|
+| `out.aligned.sorted.bam` | Final alignments used for quantification |
+| `out.rtRNA.aligned.sorted.bam` | tRNA workflow only: reads aligned to the rRNA/tRNA reference |
+| `out.genome.aligned.sorted.bam` | tRNA workflow only: remaining reads aligned to the genome |
+| `out.aligned.sorted.tsv` | featureCounts count table (plus a `.summary` file) |
+
 ## Usage
 
 There are no command-line arguments. The script is meant to be edited and run cell by cell in an interactive session, or executed top to bottom:
