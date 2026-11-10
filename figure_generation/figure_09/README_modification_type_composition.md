@@ -24,7 +24,7 @@ The pipeline runs in numbered steps, each an `#%%` cell:
 |------|---------|
 | 0 | Imports (pandas + polars used side by side; polars for the large per-site joins). |
 | 1 | Central **RNome/Nature plotting theme** — fixed modification/platform colours, Nature figure sizing, `set_rnome_theme()`, panel labels, vector-only saving. |
-| 2 | Load the GENCODE **GTF** and build collapsed gene-body intervals (`dmode`). |
+| 2 | Load the GENCODE **GTF** and build collapsed gene-body intervals. |
 | 3 | Load the combined ONT per-site modification BED; drop chrY; split into **genome** vs spiked-in **rRNA** contigs. |
 | 4 | Overlap every site with gene bodies (**PyRanges** left join). |
 | 5 | **Feature-classification decision tree** → label each site as 5'UTR / CDS / 3'UTR / intronic / rRNA species (18S/28S/5S/5.8S) / lncRNA-etc / intergenic. |
@@ -48,7 +48,7 @@ A site is kept if **either**:
 
 **and**, in both cases, has solid support: `coverage ≥ 30` **and** `frequency ≥ 3%`.
 
-## Enviroment setup
+## Environment setup
 
 Python 3.10+ is required (the script uses `dict[str, str]` / `list[...] | None`
 syntax). The following packages are needed:
@@ -67,29 +67,15 @@ upsetplot
 tqdm
 pyarrow
 joblib
-dmode          # in-house project helper package (metagene / gene-body utilities)
+dmode         
 ```
 
-The **in-house `dmode` package** is required for
-`dmode.metagene_plot.prepare_gene_body_coverage()`; it is not available on
-PyPI/conda and must be installed from the project's own source. (The refactored
-CLI version removes this dependency.)
-
-Fonts: the theme targets **Helvetica/Arial**; without them matplotlib falls back
-to DejaVu Sans.
 
 ### Using Conda
 
-There is no packaged `environment.yml` for the original notebook (chiefly because
-`dmode` is not on any public channel). A minimal environment can be created
-manually, after which `dmode` is installed separately from its own source:
-
 ```bash
-conda create -n rnome python=3.10 pandas polars numpy matplotlib seaborn \
-    pyranges scipy statsmodels scikit-learn upsetplot tqdm pyarrow joblib
-conda activate rnome
-# then install the in-house dmode package from the project source, e.g.:
-# pip install /path/to/dmode
+conda create -f environment_modtype_composition.yml
+conda activate modtype_composition
 ```
 
 ## Input data
@@ -138,7 +124,7 @@ Recommended order:
   - `Figure1S_rRNA_PCA_mod_frequency.pdf`
   - `Figure1S_tRNA_PCA_mod_frequency.pdf`
 
-## Importent Notes
+## Important Notes
 
 These are carried over from comments in the script and are worth checking before
 relying on results:
