@@ -2,7 +2,7 @@
 
 This folder contains the analysis script (`biotype_analysis.py`) used to compute and plot the RNA **biotype composition** (Ensembl/GENCODE `gene_type`) of long-read (Oxford Nanopore) sequencing samples for three RNA classes: **polyA RNA**, **rRNA** and **tRNA**. For each class it loads per-sample `featureCounts` read-count tables, merges them into a gene × sample matrix, normalizes to CPM (counts per million), attaches each gene's biotype from a GTF annotation, aggregates the composition per biotype, and draws stacked horizontal bar charts.
 
-The script is written as a **notebook-style cell script** (`#%%` cell separators, intended for an interactive IDE such as VS Code or Jupyter). Input paths, sample lists and output paths are **hard-coded** in the source; it is not a command-line tool and takes no arguments. A parameterized, command-line version of the same analysis is documented in `README.md`.
+The script is written as a **notebook-style cell script** (`#%%` cell separators, intended for an interactive IDE such as VS Code or Jupyter). Input paths, sample lists and output paths are **hard-coded** in the source; it is not a command-line tool and takes no arguments. A parameterized, command-line version of the same analysis is documented in `README_executable_version.md`.
 
 ## Enviroment setup
 
