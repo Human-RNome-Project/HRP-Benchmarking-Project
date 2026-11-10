@@ -1,7 +1,7 @@
 # Conda environment for the ORIGINAL cell-based notebook
 # (modification_type_composition.py, run interactively via #%% cells).
 #
-# Create:    conda env create -f environment_original.yml
+# Create:    conda env create -f environment_modtype_composition.yml
 # Activate:  conda activate rnome
 #
 # Version pins matter here:
