@@ -23,28 +23,68 @@ data_cleaner <- function(PATH) {
            file_name %nin% c("kallisto.out", "kallisto.err"))
   
   FILES <- FILES %>%
-    separate(file_name, 
-             sep="_", c("library", "junk1", "junk2", "junk3",
-                        "barcode", "junk4",
-                        "bin_start", "bin_stop",
-                        "junkmore"),
-             fill="right", remove=FALSE) %>%
-    select(-matches("junk"))
-  
-  namelist_master <- data.frame(
-    Index = c(rep("TP-AB-19s-R-Con", 3), rep("TP-AB-19s-R-BS", 3), rep("TP-AB-19s-R-CBH", 3)),
-    Barcode = rep(c("bc8", "bc9", "bc10"), 3),
-    Treatment = c(rep("HRPC_ctrl", 3), rep("HRPC_BS", 3), rep("HRPC_CBH", 3)),
-    Rep = rep(1:3, 3)
+    mutate(
+      sample = sub("_(-?[0-9]+)_(-?[0-9]+)_(\\.[^.]+)*\\.tsv$", "", file_name),
+      bin_start = as.numeric(sub(".*_(-?[0-9]+)_(-?[0-9]+)_(\\.[^.]+)*\\.tsv$", "\\1", file_name)),
+      bin_stop = as.numeric(sub(".*_(-?[0-9]+)_(-?[0-9]+)_(\\.[^.]+)*\\.tsv$", "\\2", file_name))
+    )
+
+  # HRP benchmark sample metadata mapping
+  namelist_hrp <- data.frame(
+    sample = c(
+      "HRP_B_012_tRNA_001", "HRP_B_012_tRNA_002", "HRP_B_012_tRNA_003",
+      "HRP_B_012_tRNA_004", "HRP_B_012_tRNA_005", "HRP_B_012_tRNA_006",
+      "HRP_B_012_tRNA_007", "HRP_B_012_tRNA_008", "HRP_B_012_tRNA_009",
+      "HRP_B_012_1", "HRP_B_012_2", "HRP_B_012_3",
+      "HRP_B_012_4", "HRP_B_012_5", "HRP_B_012_6",
+      "HRP_B_012_7", "HRP_B_012_8", "HRP_B_012_9"
+    ),
+    treatment = c(
+      "HRPC_CBH", "HRPC_CBH", "HRPC_CBH",
+      "HRPC_BS",  "HRPC_ctrl", "HRPC_BS",
+      "HRPC_ctrl", "HRPC_BS",  "HRPC_ctrl",
+      "HRPC_CBH", "HRPC_CBH", "HRPC_CBH",
+      "HRPC_BS",  "HRPC_ctrl", "HRPC_BS",
+      "HRPC_ctrl", "HRPC_BS",  "HRPC_ctrl"
+    ),
+    rep = c(
+      1, 3, 2,
+      1, 1, 2,
+      2, 3, 3,
+      1, 3, 2,
+      1, 1, 2,
+      2, 3, 3
+    ),
+    stringsAsFactors = FALSE
   )
-  
-  FILES <- FILES %>%
-    inner_join(namelist_master, 
-               by = c("library" = "Index",
-                      "barcode" = "Barcode")) %>%
-    select(-library, -barcode) %>%
-    rename(treatment = Treatment,
-           rep = Rep)
+
+  matched_hrp <- inner_join(FILES, namelist_hrp, by = "sample")
+
+  if (nrow(matched_hrp) > 0) {
+    FILES <- matched_hrp %>% select(-sample)
+  } else {
+    namelist_master <- data.frame(
+      Index = c(rep("TP-AB-19s-R-Con", 3), rep("TP-AB-19s-R-BS", 3), rep("TP-AB-19s-R-CBH", 3)),
+      Barcode = rep(c("bc8", "bc9", "bc10"), 3),
+      Treatment = c(rep("HRPC_ctrl", 3), rep("HRPC_BS", 3), rep("HRPC_CBH", 3)),
+      Rep = rep(1:3, 3),
+      stringsAsFactors = FALSE
+    )
+    FILES <- FILES %>%
+      separate(file_name, 
+               sep="_", c("library", "junk1", "junk2", "junk3",
+                          "barcode", "junk4",
+                          "b_start", "b_stop",
+                          "junkmore"),
+               fill="right", remove=FALSE) %>%
+      select(-matches("junk")) %>%
+      inner_join(namelist_master, 
+                 by = c("library" = "Index",
+                        "barcode" = "Barcode")) %>%
+      select(-library, -barcode, -b_start, -b_stop, -sample) %>%
+      rename(treatment = Treatment,
+             rep = Rep)
+  }
   
   FILES$file_name <- as.character(FILES$file_name)
   FILES <- FILES %>%
