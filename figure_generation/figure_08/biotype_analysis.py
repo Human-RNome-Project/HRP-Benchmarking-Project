@@ -4,13 +4,13 @@ Preprocessing steps starting with unaligned bam files after basecalling
 
 Alignment to reference:
 (For rRNA and polyA)
-samtools fastq -T "*" in.ubam | minimap2 -y --MD -t 5 -ax splice-ont -uf -k14 /global/cfs/cdirs/m5243/references/hg38.fa -  | samtools sort -@ 2 | samtools view --threads 2 -hb -F 260 > out.aligned.sorted.bam
+samtools fastq -T "*" in.ubam | minimap2 -y --MD -t 5 -ax splice-ont -uf -k14 $NERSC/references/hg38.fa -  | samtools sort -@ 2 | samtools view --threads 2 -hb -F 260 > out.aligned.sorted.bam
 
 (For tRNA)
-samtools fastq -T "*" in.ubam | minimap2 -y -ax splice -t 5 -k 7 -w 3 -A 2 -B 1 -O1,32 -E2,0 -n 1 -m 13 -s 30 --secondary=no --MD /global/cfs/cdirs/m5243/references/hg38.rtRNA.with_oligos.fa - | samtools sort -@ 5 | samtools view --threads 5 -hb > out.rtRNA.all.sorted.bam
+samtools fastq -T "*" in.ubam | minimap2 -y -ax splice -t 5 -k 7 -w 3 -A 2 -B 1 -O1,32 -E2,0 -n 1 -m 13 -s 30 --secondary=no --MD $NERSC/references/hg38.rtRNA.with_oligos.fa - | samtools sort -@ 5 | samtools view --threads 5 -hb > out.rtRNA.all.sorted.bam
 samtools -hbS -F 4 out.rtRNA.all.sorted.bam > out.rtRNA.aligned.sorted.bam (Collect rRNA and tRNA alinging reads)
 samtools -hbS -f 4 out.rtRNA.all.sorted.bam > out.rtRNA.unaligned.sorted.bam (Collect unaligned reads)
-samtools fastq -T "*" out.rtRNA.unaligned.sorted.bam | minimap2 -y --MD -t 5 -ax splice-ont -uf -k14 /global/cfs/cdirs/m5243/references/hg38.fa -  | samtools sort -@ 2 | samtools view --threads 2 -hb -F 260 > out.genome.aligned.bam
+samtools fastq -T "*" out.rtRNA.unaligned.sorted.bam | minimap2 -y --MD -t 5 -ax splice-ont -uf -k14 $NERSC/references/hg38.fa -  | samtools sort -@ 2 | samtools view --threads 2 -hb -F 260 > out.genome.aligned.bam
 samtools merge -@ 5 out.aligned.sorted.bam out.genome.aligned.bam > out.aligned.sorted.bam
 
 Quantification with feature counts:
@@ -95,7 +95,7 @@ gene_type_colors = {
 
 #%%
 
-base = "/global/cfs/cdirs/m5243/final_bedRmods/ont/read_count_tables/"
+base = "$NERSC/final_bedRmods/ont/read_count_tables/"
 
 HRP_A_001_001_df = pd.read_csv(base + "HRP_A_001_native_polyA_RNA_001.merged.aligned.sorted.tsv",sep = "\t", header=0, comment="#")
 
@@ -141,7 +141,7 @@ merged = pd.concat(
     axis=1,
 )
 
-gtf_df, gene_body_df = dmode.metagene_plot.prepare_gene_body_coverage("/global/cfs/cdirs/m5243/references/gencode.v49.basic.annotation.gtf")
+gtf_df, gene_body_df = dmode.metagene_plot.prepare_gene_body_coverage("$NERSC/references/gencode.v49.basic.annotation.gtf")
 
 # %%
 # 1. reads per kilobase
@@ -269,7 +269,7 @@ plt.show()
 rRNA
 """
 #%%
-base = "/global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/"
+base = "$NERSC/analysis/unaligned_rRNA_bams/"
 HRP_A_018_1_df = pd.read_csv(base + "native_rRNA_Novoa_Eppendorf_Rep1.merged.aligned.sorted.tsv",sep = "\t", header=0, comment="#")
 HRP_A_018_2_df = pd.read_csv(base + "native_rRNA_Novoa_Eppendorf_Rep2.merged.aligned.sorted.tsv",sep = "\t", header=0, comment="#")
 HRP_A_018_3_df = pd.read_csv(base + "native_rRNA_Novoa_Eppendorf_Rep3.merged.aligned.sorted.tsv",sep = "\t", header=0, comment="#")
@@ -306,7 +306,7 @@ merged = pd.concat(
 
 
 # %%
-gtf_df, gene_body_df = dmode.metagene_plot.prepare_gene_body_coverage("/home/stefan/Synology/Data_jamboree/final_bedRmods/ont/unaligned_rRNA_bams/combined_v49_rRNAs.gtf")
+gtf_df, gene_body_df = dmode.metagene_plot.prepare_gene_body_coverage("$NERSC/final_bedRmods/ont/unaligned_rRNA_bams/combined_v49_rRNAs.gtf")
 
 # %%
 print(merged)
@@ -449,7 +449,7 @@ plt.show()
 tRNA
 """
 #%%
-base = "/global/cfs/cdirs/m5243/analysis/unaligned_rRNA_bams/realigned_bams/"
+base = "$NERSC/analysis/unaligned_rRNA_bams/realigned_bams/"
 HRP_A_020_1_1_df = pd.read_csv(base + "HRP_A_020_1_native_tRNA_001_final_merge.tsv",sep = "\t", header=0, comment="#")
 HRP_A_020_1_2_df = pd.read_csv(base + "HRP_A_020_1_native_tRNA_002_final_merge.tsv",sep = "\t", header=0, comment="#")
 HRP_A_020_1_3_df = pd.read_csv(base + "HRP_A_020_1_native_tRNA_003_final_merge.tsv",sep = "\t", header=0, comment="#")
@@ -497,7 +497,7 @@ merged = pd.concat(
 )
 
 # %%
-gtf_df, gene_body_df = dmode.metagene_plot.prepare_gene_body_coverage("/mnt/data01/stpastore/final_bedRmods/unaligned_tRNA_bams/combined_v49_rRNAs_tRNAs.gtf")
+gtf_df, gene_body_df = dmode.metagene_plot.prepare_gene_body_coverage("$NERSC/final_bedRmods/unaligned_tRNA_bams/combined_v49_rRNAs_tRNAs.gtf")
 
 
 

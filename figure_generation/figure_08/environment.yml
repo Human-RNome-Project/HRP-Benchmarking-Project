@@ -1,0 +1,35 @@
+# =====================================================================
+# Conda environment for biotype_analysis.py
+# ---------------------------------------------------------------------
+# Create and activate with:
+#
+#     conda env create -f environment.yml
+#     conda activate biotype-analysis
+#     python biotype_analysis.py --help
+#
+# (mamba works too and is faster: `mamba env create -f environment.yml`.)
+#
+# Notes
+# -----
+# * The core pipeline needs only pandas, matplotlib and pyyaml.
+# * `polars` is required ONLY for the optional `dmode` GTF-parsing path.
+#   Without it the built-in GTF parser is used automatically (or force it
+#   with `--no-dmode`).
+# * The internal `dmode` package is NOT on conda/PyPI, so it is not listed
+#   here. Install it separately if you want the dmode parsing path; the
+#   script runs fine without it.
+# =====================================================================
+name: biotype-analysis
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python>=3.9
+  - pandas>=1.5
+  - matplotlib-base>=3.6
+  - pyyaml>=6.0
+  - polars>=0.20        # optional: only used by the dmode GTF parser path
+  - pip
+  # - pip:
+  #     - dmode          # internal package; uncomment if available to you
