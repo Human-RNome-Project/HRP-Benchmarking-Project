@@ -52,6 +52,7 @@ The folder is divided into three main components:
 
 ## Getting Started
 
-1. **Upstream Processing:** Follow the instructions in the [`wdl-pipelines-main/README.md`](wdl-pipelines-main/README.md) to basecall and map your raw reads.
-2. **Format Conversion:** Run the Python scripts described in the [`format_conversion_and_merging/`](format_conversion_and_merging/) folder to standardize your files.
-3. **Downstream Selection:** Use the Snakemake environment in [`wf-LRS-bedrmod-native-vs-ivt-main/`](wf-LRS-bedrmod-native-vs-ivt-main/) to perform final statistical filtering.
+1. **Step-by-Step Tutorial:** Follow the [LRS Data Processing Tutorial](LRS_Data_Processing_Tutorial.md) for a beginner-friendly walkthrough covering data download, Dorado basecalling, WDL execution, and Modkit pileup.
+2. **Upstream Processing:** Follow the instructions in the [`wdl-pipelines-main/README.md`](wdl-pipelines-main/README.md) to basecall and map your raw reads.
+3. **Format Conversion:** Run the Python scripts described in the [`format_conversion_and_merging/`](format_conversion_and_merging/) folder to standardize your files.
+4. **Downstream Selection:** Use the Snakemake environment in [`wf-LRS-bedrmod-native-vs-ivt-main/`](wf-LRS-bedrmod-native-vs-ivt-main/) to perform final statistical filtering.
