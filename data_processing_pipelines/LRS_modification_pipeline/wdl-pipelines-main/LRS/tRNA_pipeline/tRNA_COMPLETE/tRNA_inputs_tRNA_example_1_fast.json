@@ -1,0 +1,36 @@
+
+{
+  "ont_tRNA.pod5_files": [
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_0_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_10_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_11_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_12_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_13_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_14_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_15_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_16_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_17_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_18_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_19_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_1_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_20_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_21_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_2_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_3_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_4_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_5_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_6_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_7_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_8_bc1.pod5",
+  "/global/cfs/cdirs/m5243/benchmarking/ont/NOVOA_E/ONT_tRNA_native_vs_gentegra/raw/bc_1/PBG93146_b1725082_b2f0dca5_9_bc1.pod5"
+],
+  "ont_tRNA.sample_id": "tRNA_example_1_fast ",
+  "ont_tRNA.ref_transcriptome": "/global/cfs/cdirs/m5243/references/Novoa_V2/hg38.rtRNA.with_oligos.fa",
+  "ont_tRNA.cpus": 12,
+  "ont_tRNA.barcoded": false,
+  "ont_tRNA.barcoding_model": "b04_RNA004",
+  "ont_tRNA.basecalling_type": "fast",
+  "ont_tRNA.use_gpu": "cuda:0,1,2,3",
+  "ont_tRNA.gpus": "4",
+  "ont_tRNA.modeldir": "/global/cfs/cdirs/m5243/analysis/ont/ont_mRNA_pilot/pipeline/modeldirectory"
+}
