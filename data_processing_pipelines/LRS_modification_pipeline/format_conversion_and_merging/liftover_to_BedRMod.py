@@ -33,6 +33,7 @@ opt_parser.add_argument(
 opt_parser.add_argument(
     "-s",
     "--tRNA_adapter_offset",
+    type=int,
     dest="tRNA_adapter_offset",
     help="tRNA adapter offset when using ONT to correct for alignment with adapters (default=-3)",
     default=0,
