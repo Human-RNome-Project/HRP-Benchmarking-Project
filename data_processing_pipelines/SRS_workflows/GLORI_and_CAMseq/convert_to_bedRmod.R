@@ -42,7 +42,7 @@ fun_convert_to_bedRmod = function(
       Ratio >= min_Ratio, P_adjust < max_FDR
     ) %>%
     mutate(chrom = Chr, chromStart = Sites-1, chromEnd = Sites, name = modification, 
-      score = round(-log10(P_adjust), 2), 
+      score = pmin(1000, round(-10 * log10(P_adjust))), 
       strand = Strand,
       thickStart = Sites-1, thickEnd = Sites, itemRgb = "0,0,0",
       coverage = AGcov, frequency = round(Ratio * 100, 2), 
@@ -61,9 +61,9 @@ fun_convert_to_bedRmod = function(
   meta_lines <- c(
     "#fileformat=bedRModv2",
     "#organism=9606",
-    "#modification_type=mRNA",
-    "#modification_names=21891:m6A:A",
-    "#sequencing_plattform=Illumina",
+    "#modification_type=RNA",
+    paste0("#modification_names=", modification, ":", modification, ":A"),
+    "#sequencing_platform=Illumina",
     "#assembly=GRCh38"
   )
 
@@ -72,7 +72,7 @@ fun_convert_to_bedRmod = function(
 
   # Then append the data
   data.table::fwrite(df, paste0(outdir, "/", sampleName, ".bed"), 
-                    sep = "\t", append = TRUE)
+                    col.names = T, sep = "\t", append = TRUE)
 }
 
 option_list = list(
