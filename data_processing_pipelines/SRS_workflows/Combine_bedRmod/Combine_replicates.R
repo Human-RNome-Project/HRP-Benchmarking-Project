@@ -8,7 +8,8 @@ suppressPackageStartupMessages({
 #' @param fins A list of input bedRmod files to be merged as replicates
 #' @param fout Output file path, e.g., Merged_replicates.bed
 #' @param min_required_reps Minimum number of replicates required to output a modification site as a confident one, default is 2
-fun_merge_rep <- function(fins, fout, min_required_reps = 2) {
+#' @param modification Modification type, either m6A or m5C
+fun_merge_rep <- function(fins, fout, min_required_reps = 2, modification) {
   # read bedRmod files of all replicates as a list of data.frames
   ldf = lapply(fins, function(f) {
     data.table::fread(f, data.table = F) %>%
@@ -19,7 +20,7 @@ fun_merge_rep <- function(fins, fout, min_required_reps = 2) {
   df = do.call(rbind, ldf) %>%
     group_by(chrom, chromStart, chromEnd, name, strand, thickStart, thickEnd) %>%
     summarise(
-      score = round(max(score, na.rm = T), 2), 
+      score = round(max(score, na.rm = T)), 
       itemRgb = "0,0,0",
       coverage = sum(coverage, na.rm = T),
       frequency = round(mean(frequency, na.rm = T), 2),
@@ -41,9 +42,10 @@ fun_merge_rep <- function(fins, fout, min_required_reps = 2) {
   meta_lines <- c(
     "#fileformat=bedRModv2",
     "#organism=9606",
-    "#modification_type=mRNA",
-    "#modification_names=21891:m6A:A",
-    "#sequencing_plattform=Illumina",
+    "#modification_type=RNA",
+    paste0("#modification_names=", modification, ":", modification, ":", 
+      switch(modification, m5C = "C", m6A = "A")),
+    "#sequencing_platform=Illumina",
     "#assembly=GRCh38"
   )
 
@@ -51,7 +53,7 @@ fun_merge_rep <- function(fins, fout, min_required_reps = 2) {
   writeLines(meta_lines, con = fout)
 
   # Then append the data
-  data.table::fwrite(df, fout, sep = "\t", append = TRUE)
+  data.table::fwrite(df, fout, col.names = T, sep = "\t", append = TRUE)
 }
 
 
@@ -61,7 +63,9 @@ option_list = list(
   make_option(c("-o", "--output"), type = "character",
               help = "Combined bedRmod with pooled coverage and mean frequency across replicates [required]"),
   make_option(c("--min_reps"), type = "integer", default = 2,
-              help = "Minimum number of replicates required to keep a modification site, default: 2")
+              help = "Minimum number of replicates required to keep a modification site, default: 2"),
+  make_option(c("-m", "--modification"), type = "character", 
+              help = "Modification type, m5C or m6A [required]")
 )
 
 
@@ -76,5 +80,6 @@ args = parse_args(parser, positional_arguments = TRUE)
 fun_merge_rep(
   fins = args$args,
   fout = args$options$output,
-  min_required_reps = args$options$min_reps
+  min_required_reps = args$options$min_reps,
+  modification = args$options$modification
 )

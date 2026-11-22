@@ -59,6 +59,7 @@ For each sequencing method and modification type, merge bedRMod files from biolo
 ```bash
 Rscript Combine_replicates.R \
   -i Rep1.bed Rep2.bed Rep3.bed \
+  -m m6A \
   -o Merged_replicates.bed
 ```
 
@@ -67,6 +68,7 @@ By default, a modification site must be detected in at least two replicates to b
 ```bash
 Rscript Combine_replicates.R \
   -i Rep1.bed Rep2.bed Rep3.bed \
+  -m m6A \
   -o Merged_replicates.bed \
   --min_reps 3
 ```
@@ -77,11 +79,12 @@ For sites retained after replicate merging, coverage is summed across replicates
 
 If the same modification is detected using multiple sequencing methods, merge the replicate-combined bedRMod files using `Combine_methods.R`.
 
-For example, m6A sites detected by GLORI, CAM-seq and eTAM-seq can be merged as:
+For example, m6A sites detected by GLORI, CAM-seq can be merged as:
 
 ```bash
 Rscript Combine_methods.R \
-  -i GLORI_m6A.bed CAM-seq_m6A.bed eTAM-seq_m6A.bed \
+  -i GLORI_m6A.bed CAM-seq_m6A.bed \
+  -m m6A \
   -o Merged_m6A.bed
 ```
 
@@ -96,7 +99,7 @@ Because each bedRMod file contains a `#`-prefixed header line, the header from t
 For example:
 
 ```bash
-awk 'FNR==1 && NR!=1 && /^#/ {next} {print}' \
+awk 'NR==FNR || !/^#/' \
   polyA_m6A.bed \
   polyA_m5C.bed \
   rRNA.bed \
