@@ -25,17 +25,48 @@ ANNOT_PL=${ANNOT_PL:-$( [[ -x ./annotPileupRev ]] && echo ./annotPileupRev || ec
 FQ_DIR=${FQ_DIR:-fq}
 # threads (NGmerge here, and passed on to the mapping script)
 NCPUS=${NCPUS:-24}
-# sample names = FASTQ prefix before _L<lane>_R<read>_001.fastq.gz
-SAMPLES=${SAMPLES:-"Rnome-FTO1 Rnome-FTO2 Rnome-FTO3 Rnome-IVT-1 Rnome-IVT-3 Rnome-mRNA-1 Rnome-mRNA-2 Rnome-mRNA-3"}
+# sample sheet: sample, group, replicate, fastq_prefix (see samples.tsv)
+SAMPLE_SHEET=${SAMPLE_SHEET:-$(dirname "$0")/samples.tsv}
+# optional subset: space-separated values of the "sample" column (default: whole sheet)
+SAMPLES=${SAMPLES:-}
 # tool versions of the reference run (a different version only gives a warning)
 CUTADAPT_VERSION=4.6
 SAMTOOLS_VERSION=1.17
 # ---------------------------------------------------------------------------
 
-# FASTQ of one sample and one read, all lanes, sorted by lane
-fastq_files() { # <sample> <R1|R2>
-  find "$FQ_DIR" -maxdepth 2 -name "${1}_L*_${2}_001.fastq.gz" | sort
+# FASTQ of one prefix and one read, all lanes, sorted by lane. Accepts the
+# released names (<prefix>_L1_R1.fastq[.gz]) and the sequencer ones
+# (<prefix>_L1_R1_001.fastq.gz), compressed or not.
+fastq_files() { # <prefix> <R1|R2>
+  find "$FQ_DIR" -maxdepth 2 -regextype posix-extended \
+       -regex ".*/${1}_L[0-9]+_${2}(_001)?\.(fastq|fq)(\.gz)?" | sort
 }
+# concatenates FASTQ files, decompressing the gzipped ones only
+cat_fastq() {
+  local f
+  for f in "$@"; do
+    case $f in
+      *.gz) gzip -dc "$f" ;;
+      *)    cat "$f" ;;
+    esac || return 1
+  done
+}
+
+[[ -s $SAMPLE_SHEET ]] || { echo "Sample sheet not found: $SAMPLE_SHEET" >&2; exit 1; }
+# sample sheet -> SHEET_SAMPLE[] / SHEET_PREFIX[] (comment lines and header skipped)
+SHEET_SAMPLE=(); SHEET_PREFIX=()
+while IFS=$'\t' read -r s_name s_group s_rep s_prefix _; do
+  [[ -z $s_name || $s_name == \#* || $s_name == sample ]] && continue
+  if [[ ! $s_name =~ ^[A-Za-z0-9_.-]+$ || -z $s_group || -z $s_rep ]]; then
+    echo "Malformed line in $SAMPLE_SHEET: '$s_name $s_group $s_rep $s_prefix'" >&2; exit 1
+  fi
+  if [[ -n $SAMPLES && " $SAMPLES " != *" $s_name "* ]]; then continue; fi
+  SHEET_SAMPLE+=("$s_name"); SHEET_PREFIX+=("${s_prefix:-NA}")
+done < "$SAMPLE_SHEET"
+for s in $SAMPLES; do
+  [[ " ${SHEET_SAMPLE[*]} " == *" $s "* ]] || { echo "Sample $s is not in $SAMPLE_SHEET" >&2; exit 1; }
+done
+[[ ${#SHEET_SAMPLE[@]} -gt 0 ]] || { echo "No sample to process in $SAMPLE_SHEET" >&2; exit 1; }
 
 for tool in cutadapt umi_tools NGmerge samtools; do
   command -v $tool > /dev/null || { echo "Missing tool on the PATH: $tool (see README.md)" >&2; exit 1; }
@@ -55,17 +86,30 @@ compgen -G "$GB_DIR/*.gb.gz" > /dev/null || { echo "No GenBank record in $GB_DIR
 
 echo "Reference folder: $REF_DIR"
 
-for sample in $SAMPLES; do
+echo "Sample sheet: $SAMPLE_SHEET (${#SHEET_SAMPLE[@]} samples)"
+
+for i in "${!SHEET_SAMPLE[@]}"; do
+  sample=${SHEET_SAMPLE[$i]}
+  prefix=${SHEET_PREFIX[$i]}
   if [[ -s outstitch/$sample/$sample.$GENOME_INDEX_NAME.align.sorted.dedup.flt.bam ]]; then
     echo "Sample $sample was already processed - skipping"
     continue
   fi
   echo "Processing sample $sample"
-  mapfile -t R1 < <(fastq_files "$sample" R1)
-  mapfile -t R2 < <(fastq_files "$sample" R2)
+  # FASTQ prefix from the sheet; the sample name itself when the prefix is NA or matches nothing
+  R1=(); R2=()
+  if [[ $prefix != NA ]]; then
+    mapfile -t R1 < <(fastq_files "$prefix" R1)
+    mapfile -t R2 < <(fastq_files "$prefix" R2)
+  fi
+  if [[ ${#R1[@]} -eq 0 ]]; then
+    mapfile -t R1 < <(fastq_files "$sample" R1)
+    mapfile -t R2 < <(fastq_files "$sample" R2)
+  fi
   if [[ ${#R1[@]} -eq 0 || ${#R1[@]} -ne ${#R2[@]} ]]; then
-    echo "FASTQ problem for $sample in $FQ_DIR: ${#R1[@]} R1 and ${#R2[@]} R2 files (expected ${sample}_L<n>_R[12]_001.fastq.gz)" >&2
-    break
+    echo "FASTQ problem for $sample in $FQ_DIR: ${#R1[@]} R1 and ${#R2[@]} R2 files" \
+         "(expected ${prefix}_L<n>_R[12][_001].fastq[.gz] or ${sample}_L<n>_R[12][_001].fastq[.gz])" >&2
+    exit 1
   fi
   echo "  R1: ${R1[*]}"
   echo "  R2: ${R2[*]}"
@@ -73,26 +117,28 @@ for sample in $SAMPLES; do
            -g GACGCTCTTCCGATCT -A AGATCGGAAGAGCGTC \
            -o $sample.R1.a5trim.fastq.gz \
            -p $sample.R2.a3trim.fastq.gz \
-           <(gzip -dc "${R1[@]}") \
-           <(gzip -dc "${R2[@]}") > $sample.a3a5trim.umi.round1.log || break
+           <(cat_fastq "${R1[@]}") \
+           <(cat_fastq "${R2[@]}") > $sample.a3a5trim.umi.round1.log || exit 1
   cutadapt -j 0 -e 0.1 -n 1 -O 7 -q 6 -m 0:46 \
            -a NNNNNNAGATCGGAAGAGCACA -G TGTGCTCTTCCGATCT \
            -o $sample.R1.a3a5trim.fastq.gz \
            -p $sample.R2.a3a5trim.fastq.gz \
            $sample.R1.a5trim.fastq.gz \
-           $sample.R2.a3trim.fastq.gz > $sample.a3a5trim.umi.round2.log || break
+           $sample.R2.a3trim.fastq.gz > $sample.a3a5trim.umi.round2.log || exit 1
   umi_tools extract --random-seed=123 --extract-method=regex --bc-pattern=".*" --bc-pattern2="^(?P<umi_1>.{6}).*" \
                     -I $sample.R1.a3a5trim.fastq.gz --read2-in=$sample.R2.a3a5trim.fastq.gz \
                     --stdout=$sample.R1.a3a5trim.umi.fastq.gz \
                     --read2-out=$sample.R2.a3a5trim.umi.fastq.gz \
-                    -L $sample.a3a5trim.umi.log || break
-  NGmerge -1 $sample.R1.a3a5trim.umi.fastq.gz -2 $sample.R2.a3a5trim.umi.fastq.gz -o $sample.stitched.fq -f $sample.nonstitched -s -d -e 20 -z -n $NCPUS -u 45 -g -v || break
+                    -L $sample.a3a5trim.umi.log || exit 1
+  NGmerge -1 $sample.R1.a3a5trim.umi.fastq.gz -2 $sample.R2.a3a5trim.umi.fastq.gz -o $sample.stitched.fq -f $sample.nonstitched -s -d -e 20 -z -n $NCPUS -u 45 -g -v || exit 1
   rm $sample.R1.a5trim.fastq.gz $sample.R2.a3trim.fastq.gz
   rm $sample.R[12].a3a5trim.fastq.gz
-  $MAP_SH $sample "$REF_DIR" || break
+  $MAP_SH $sample "$REF_DIR" || exit 1
   echo "Annotating $sample"
-  gzip -dc $GB_DIR/*.gb.gz | $ANNOT_PL outstitch/$sample/$sample.$GENOME_INDEX_NAME.align.sorted.dedup.flt.bam $GENOME_FA_GZ >$sample.annot.txt
-  rm $sample.nonstitched_?.fastq.gz
+  ( set -o pipefail
+    gzip -dc $GB_DIR/*.gb.gz | $ANNOT_PL outstitch/$sample/$sample.$GENOME_INDEX_NAME.align.sorted.dedup.flt.bam $GENOME_FA_GZ >$sample.annot.txt ) ||
+    { echo "annotPileupRev failed for $sample" >&2; rm -f $sample.annot.txt; exit 1; }
+  rm -f $sample.nonstitched_?.fastq.gz
 done
 
 exit 0
