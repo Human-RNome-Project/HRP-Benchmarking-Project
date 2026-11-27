@@ -14,6 +14,7 @@ tables and bedRMod v2 files.
 ## Directory Structure
 
 - `pipeline.R` # Self-contained script: per-site statistics, edgeR differential analysis, table and bedRMod export
+- `/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/PreProcess/` # Upstream chain FASTQ (HRP_B_002) → per-site annotated tables; see `/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/PreProcess/README.md`
 - `README.md` # Contains project documentation
 
 Output directories are created by the script inside `out_dir` (see *Usage*):
@@ -36,12 +37,12 @@ Output directories are created by the script inside `out_dir` (see *Usage*):
 To run the script you need an **R (≥ 4.3)** environment with Bioconductor. Required packages:
 
 - Bioconductor: `edgeR`, `limma`
-- CRAN: `dplyr`, `stringr`, `tibble`, `ggplot2`, `data.table`
+- CRAN: `dplyr`, `stringr`, `tibble`, `ggplot2`, `data.table`, `readr` (used by `edgeR::readBismark2DGE`, not loaded with `library()`)
 
 Installation:
 
 ```r
-install.packages(c("dplyr", "stringr", "tibble", "ggplot2", "data.table", "BiocManager"))
+install.packages(c("dplyr", "stringr", "tibble", "ggplot2", "data.table", "readr", "BiocManager"))
 BiocManager::install(c("edgeR", "limma"))
 ```
 
@@ -61,7 +62,9 @@ Input tables are produced upstream by the eTAM-seq pre-processing pipeline (see 
 trimming, mapping, per-position A/G counting). They are not included in this repository.
 They are the `<sample>.annot.txt` files written by `/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/PreProcess/run`, unchanged, copied under the
 names below by `/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/PreProcess/3_make_metadata.sh <annot_dir> <data_dir>`
-(`Rnome-mRNA-<N>` → `metadata_form_mRNA_<N>.tsv`, `Rnome-IVT-<N>` → `metadata_form_IVT_<N>.tsv`).
+(group `mRNA`, replicate `<N>` → `metadata_form_mRNA_<N>.tsv`; group `IVT` → `metadata_form_IVT_<N>.tsv`;
+group and replicate are read from `/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/PreProcess/samples.tsv`, which also maps the data hub names
+`HRP_B_002_<N>` to the samples).
 `data_dir` must contain the two sub-folders below; every `*.tsv` file in them is loaded.
 
 | Input File | Description | File Type/Format | Script Usage |
@@ -114,7 +117,7 @@ there, as well as the plotting style (`theme_custom`).
 
 - Genome/annotation: the pipeline reuses the annotation columns already present in the
   metadata tables (`chr`, `pos`, `gene`, `kind`), which come from the RefSeq GenBank records of
-  **GRCh38.p12** (`GCF_000001405.38`) used in `/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/PreProcess/`. No annotation package is loaded. These can be found in the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder.
+  **GRCh38.p12** (`GCF_000001405.38`) used in `/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/PreProcess/`. No annotation package is loaded.
 - bedRMod header: `#organism=9606`, `#assembly=GRCh38.p12`, `#annotation_source=RefSeq`,
   `#annotation_version=GCF_000001405.38_GRCh38.p12`, `#sequencing_platform=Illumina NextSeq 2000`
   (parameters `BEDRMOD_*`).
