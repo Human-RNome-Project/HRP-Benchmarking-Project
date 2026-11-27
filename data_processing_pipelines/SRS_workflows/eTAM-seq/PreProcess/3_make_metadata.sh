@@ -1,28 +1,40 @@
 #!/bin/bash
-# usage: ./3_make_metadata.sh <annot_dir> <data_dir>
+# usage: ./3_make_metadata.sh <annot_dir> <data_dir> [sample_sheet]
 #
-# Puts the <sample>.annot.txt tables written by `run` where ../pipeline.R reads them:
-#   Rnome-mRNA-<N>.annot.txt -> <data_dir>/ETAM_RNA_mrna/metadata/metadata_form_mRNA_<N>.tsv
-#   Rnome-IVT-<N>.annot.txt  -> <data_dir>/ETAM_RNA_IVT/metadata/metadata_form_IVT_<N>.tsv
-# The content is unchanged (same columns). Other samples (Rnome-FTO*) are not used by
-# pipeline.R and are skipped.
+# Puts the <sample>.annot.txt tables written by `run` where /HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/DownstreamProcess/pipeline.R
+# reads them. Group and replicate come from the sample sheet (samples.tsv by default), not
+# from the file names:
+#   group mRNA, replicate N -> <data_dir>/ETAM_RNA_mrna/metadata/metadata_form_mRNA_<N>.tsv
+#   group IVT,  replicate N -> <data_dir>/ETAM_RNA_IVT/metadata/metadata_form_IVT_<N>.tsv
+# The content is unchanged (same columns). Samples of any other group are skipped.
 annot_dir=${1:-}
 data_dir=${2:-}
+sheet=${3:-${SAMPLE_SHEET:-$(dirname "$0")/samples.tsv}}
 if [[ -z $annot_dir || -z $data_dir ]]; then
-  echo "usage: $0 <annot_dir> <data_dir>" >&2
+  echo "usage: $0 <annot_dir> <data_dir> [sample_sheet]" >&2
   exit 1
 fi
+[[ -r $sheet ]] || { echo "Sample sheet not found: $sheet" >&2; exit 1; }
 
-mkdir -p "$data_dir/ETAM_RNA_mrna/metadata" "$data_dir/ETAM_RNA_IVT/metadata"
+mkdir -p "$data_dir/ETAM_RNA_mrna/metadata" "$data_dir/ETAM_RNA_IVT/metadata" || exit 1
 n=0
-for f in "$annot_dir"/Rnome-*.annot.txt; do
-  [[ -e $f ]] || continue
-  s=$(basename "$f" .annot.txt)          # e.g. Rnome-mRNA-1
-  case $s in
-    Rnome-mRNA-*) out="$data_dir/ETAM_RNA_mrna/metadata/metadata_form_mRNA_${s#Rnome-mRNA-}.tsv" ;;
-    Rnome-IVT-*)  out="$data_dir/ETAM_RNA_IVT/metadata/metadata_form_IVT_${s#Rnome-IVT-}.tsv" ;;
-    *) echo "skipped (not used by pipeline.R): $s"; continue ;;
+missing=0
+while IFS=$'\t' read -r s_name s_group s_rep _; do
+  [[ -z $s_name || $s_name == \#* || $s_name == sample ]] && continue
+  case $s_group in
+    mRNA) out="$data_dir/ETAM_RNA_mrna/metadata/metadata_form_mRNA_${s_rep}.tsv" ;;
+    IVT)  out="$data_dir/ETAM_RNA_IVT/metadata/metadata_form_IVT_${s_rep}.tsv" ;;
+    *) echo "skipped (group '$s_group' not used by pipeline.R): $s_name"; continue ;;
   esac
-  cp "$f" "$out" && echo "$s -> $out" && n=$((n + 1))
-done
-[[ $n -gt 0 ]] || { echo "No Rnome-mRNA-*/Rnome-IVT-* .annot.txt in $annot_dir" >&2; exit 1; }
+  f="$annot_dir/$s_name.annot.txt"
+  if [[ ! -s $f ]]; then
+    echo "Missing: $f" >&2
+    missing=$((missing + 1))
+    continue
+  fi
+  cp "$f" "$out" || exit 1
+  echo "$s_name ($s_group, replicate $s_rep) -> $out"
+  n=$((n + 1))
+done < "$sheet"
+[[ $missing -eq 0 ]] || { echo "$missing table(s) of $sheet missing in $annot_dir" >&2; exit 1; }
+[[ $n -gt 0 ]] || { echo "No mRNA/IVT sample in $sheet" >&2; exit 1; }
