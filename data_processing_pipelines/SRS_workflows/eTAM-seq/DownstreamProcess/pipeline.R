@@ -1,6 +1,5 @@
 #####################################################################
 # Description: Differential m6A Analysis - Rnome mrna vs ivt        #
-# Date: 2026/02 (rev. 2026/11)                                      #
 #                                                                   #
 # Load and prepare the m6A methylation data                         #
 # Identify the sequences motifs associated to m6A                   #
@@ -27,6 +26,9 @@ suppressPackageStartupMessages({
   library(edgeR)
   library(limma)
 })
+# readBismark2DGE() reads the input_DE/ files with readr (readr = TRUE by default)
+if (!requireNamespace("readr", quietly = TRUE))
+  stop("Package 'readr' is required by edgeR::readBismark2DGE: install.packages(\"readr\")")
 
 # ==================
 # Resolution conflicts
@@ -480,6 +482,3 @@ write_bedRMod(res_p, out_bed(paste0(IVT, "_pV", FDR_THRESHOLD, "_bedRMod.bed")),
               pvalue_col = "PValue", frequency_col = "mean_IVT", coverage_col = "cov_IVT")
 
 cat("\n=== Pipeline complete! ===\n")
-
-
-
