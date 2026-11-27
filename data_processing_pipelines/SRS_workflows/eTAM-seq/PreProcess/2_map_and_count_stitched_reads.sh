@@ -38,7 +38,7 @@ ncpus=${NCPUS:-24}
 A2G_percent=${A2G_PERCENT:-0.5}
 # minimum read coverage in a position to be considered for output
 cov=${COV:-1}
-# sample name: e.g., hela.polya.wt.ftom.rep1
+# sample name: e.g., Rnome-mRNA-1
 sample=$1
 # library type: F for forward, R for reverse
 strandness=${STRANDNESS:-R}
