@@ -6,9 +6,10 @@ use warnings;
 # the genome FASTA can also come from the GENOME_FA_GZ environment variable
 my $bam = shift @ARGV;
 die "usage: $0 <bam> [genome.fa.gz] < records.gb\n" unless defined $bam;
-my $fa = $ENV{GENOME_FA_GZ} || "/home/h/OneDrive/Unil/data/b38/b38.fa.gz";
+my $fa = $ENV{GENOME_FA_GZ};
 $fa = shift @ARGV if @ARGV && $ARGV[0] !~ /\.gb$/;
-die "Genome FASTA not found: $fa (set GENOME_FA_GZ or pass it as 2nd argument)\n" unless -s $fa;
+die "Genome FASTA required: pass it as 2nd argument or set GENOME_FA_GZ\n" unless defined $fa && $fa ne "";
+die "Genome FASTA not found: $fa\n" unless -s $fa;
 my $name;
 my $seq;
 my $len;
