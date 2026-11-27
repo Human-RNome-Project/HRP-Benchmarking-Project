@@ -1,0 +1,144 @@
+#!/bin/bash
+# usage: ./run <ref_dir>
+#        REF_DIR=/path/to/b38 ./run
+#
+# ---- paths (all overridable from the environment) -------------------------
+# Reference folder holding the genome, the hisat-3n indexes and the GenBank
+# records (required). See README.md, "Reference data: where to get it".
+REF_DIR=${1:-${REF_DIR:-}}
+if [[ -z $REF_DIR ]]; then
+  echo "usage: $0 <ref_dir>   (or REF_DIR=/path/to/b38 $0)" >&2
+  exit 1
+fi
+# genome sequence, bgzipped, given to annotPileupRev / samtools mpileup
+GENOME_FA_GZ=${GENOME_FA_GZ:-$REF_DIR/b38.fa.gz}
+# RefSeq GenBank flat files, one per chromosome
+GB_DIR=${GB_DIR:-$REF_DIR/GB}
+# name of the hisat-3n genome index: it is part of every output file name
+GENOME_INDEX_NAME=${GENOME_INDEX_NAME:-b38}
+# the two other scripts of the pipeline: taken from the current folder, or from
+# the parent one for annotPileupRev when it is shared between datasets
+MAP_SH=${MAP_SH:-./2_map_and_count_stitched_reads.sh}
+ANNOT_PL=${ANNOT_PL:-$( [[ -x ./annotPileupRev ]] && echo ./annotPileupRev || echo ../annotPileupRev )}
+# input FASTQ folder: the HRP_B_002 files, either flat or in one sub-folder per
+# sample as downloaded (searched 2 levels deep)
+FQ_DIR=${FQ_DIR:-fq}
+# threads (NGmerge here, and passed on to the mapping script)
+NCPUS=${NCPUS:-24}
+# sample sheet: sample, group, replicate, fastq_prefix (see samples.tsv)
+SAMPLE_SHEET=${SAMPLE_SHEET:-$(dirname "$0")/samples.tsv}
+# optional subset: space-separated values of the "sample" column (default: whole sheet)
+SAMPLES=${SAMPLES:-}
+# tool versions of the reference run (a different version only gives a warning)
+CUTADAPT_VERSION=4.6
+SAMTOOLS_VERSION=1.17
+# ---------------------------------------------------------------------------
+
+# FASTQ of one prefix and one read, all lanes, sorted by lane. Accepts the
+# released names (<prefix>_L1_R1.fastq[.gz]) and the sequencer ones
+# (<prefix>_L1_R1_001.fastq.gz), compressed or not.
+fastq_files() { # <prefix> <R1|R2>
+  find "$FQ_DIR" -maxdepth 2 -regextype posix-extended \
+       -regex ".*/${1}_L[0-9]+_${2}(_001)?\.(fastq|fq)(\.gz)?" | sort
+}
+# concatenates FASTQ files, decompressing the gzipped ones only
+cat_fastq() {
+  local f
+  for f in "$@"; do
+    case $f in
+      *.gz) gzip -dc "$f" ;;
+      *)    cat "$f" ;;
+    esac || return 1
+  done
+}
+
+[[ -s $SAMPLE_SHEET ]] || { echo "Sample sheet not found: $SAMPLE_SHEET" >&2; exit 1; }
+# sample sheet -> SHEET_SAMPLE[] / SHEET_PREFIX[] (comment lines and header skipped)
+SHEET_SAMPLE=(); SHEET_PREFIX=()
+while IFS=$'\t' read -r s_name s_group s_rep s_prefix _; do
+  [[ -z $s_name || $s_name == \#* || $s_name == sample ]] && continue
+  if [[ ! $s_name =~ ^[A-Za-z0-9_.-]+$ || -z $s_group || -z $s_rep ]]; then
+    echo "Malformed line in $SAMPLE_SHEET: '$s_name $s_group $s_rep $s_prefix'" >&2; exit 1
+  fi
+  if [[ -n $SAMPLES && " $SAMPLES " != *" $s_name "* ]]; then continue; fi
+  SHEET_SAMPLE+=("$s_name"); SHEET_PREFIX+=("${s_prefix:-NA}")
+done < "$SAMPLE_SHEET"
+for s in $SAMPLES; do
+  [[ " ${SHEET_SAMPLE[*]} " == *" $s "* ]] || { echo "Sample $s is not in $SAMPLE_SHEET" >&2; exit 1; }
+done
+[[ ${#SHEET_SAMPLE[@]} -gt 0 ]] || { echo "No sample to process in $SAMPLE_SHEET" >&2; exit 1; }
+
+for tool in cutadapt umi_tools NGmerge samtools; do
+  command -v $tool > /dev/null || { echo "Missing tool on the PATH: $tool (see README.md)" >&2; exit 1; }
+done
+v=$(cutadapt --version)
+[[ $v == "$CUTADAPT_VERSION" ]] || echo "Warning: cutadapt $v, the reference run used $CUTADAPT_VERSION" >&2
+v=$(samtools --version | head -1 | cut -d' ' -f2)
+[[ $v == "$SAMTOOLS_VERSION" ]] || echo "Warning: samtools $v, the reference run used $SAMTOOLS_VERSION" >&2
+
+# exported so that 2_map_and_count_stitched_reads.sh uses the same values
+export REF_DIR GENOME_INDEX_NAME NCPUS
+
+for f in "$GENOME_FA_GZ" "$MAP_SH" "$ANNOT_PL"; do
+  [[ -s $f ]] || { echo "Missing file: $f (check REF_DIR='$REF_DIR', see README.md)" >&2; exit 1; }
+done
+compgen -G "$GB_DIR/*.gb.gz" > /dev/null || { echo "No GenBank record in $GB_DIR (see README.md)" >&2; exit 1; }
+
+echo "Reference folder: $REF_DIR"
+
+echo "Sample sheet: $SAMPLE_SHEET (${#SHEET_SAMPLE[@]} samples)"
+
+for i in "${!SHEET_SAMPLE[@]}"; do
+  sample=${SHEET_SAMPLE[$i]}
+  prefix=${SHEET_PREFIX[$i]}
+  if [[ -s outstitch/$sample/$sample.$GENOME_INDEX_NAME.align.sorted.dedup.flt.bam ]]; then
+    echo "Sample $sample was already processed - skipping"
+    continue
+  fi
+  echo "Processing sample $sample"
+  # FASTQ prefix from the sheet; the sample name itself when the prefix is NA or matches nothing
+  R1=(); R2=()
+  if [[ $prefix != NA ]]; then
+    mapfile -t R1 < <(fastq_files "$prefix" R1)
+    mapfile -t R2 < <(fastq_files "$prefix" R2)
+  fi
+  if [[ ${#R1[@]} -eq 0 ]]; then
+    mapfile -t R1 < <(fastq_files "$sample" R1)
+    mapfile -t R2 < <(fastq_files "$sample" R2)
+  fi
+  if [[ ${#R1[@]} -eq 0 || ${#R1[@]} -ne ${#R2[@]} ]]; then
+    echo "FASTQ problem for $sample in $FQ_DIR: ${#R1[@]} R1 and ${#R2[@]} R2 files" \
+         "(expected ${prefix}_L<n>_R[12][_001].fastq[.gz] or ${sample}_L<n>_R[12][_001].fastq[.gz])" >&2
+    exit 1
+  fi
+  echo "  R1: ${R1[*]}"
+  echo "  R2: ${R2[*]}"
+  cutadapt -j 0 -e 0.1 -n 1 -O 1 -q 6 -m 0:46 \
+           -g GACGCTCTTCCGATCT -A AGATCGGAAGAGCGTC \
+           -o $sample.R1.a5trim.fastq.gz \
+           -p $sample.R2.a3trim.fastq.gz \
+           <(cat_fastq "${R1[@]}") \
+           <(cat_fastq "${R2[@]}") > $sample.a3a5trim.umi.round1.log || exit 1
+  cutadapt -j 0 -e 0.1 -n 1 -O 7 -q 6 -m 0:46 \
+           -a NNNNNNAGATCGGAAGAGCACA -G TGTGCTCTTCCGATCT \
+           -o $sample.R1.a3a5trim.fastq.gz \
+           -p $sample.R2.a3a5trim.fastq.gz \
+           $sample.R1.a5trim.fastq.gz \
+           $sample.R2.a3trim.fastq.gz > $sample.a3a5trim.umi.round2.log || exit 1
+  umi_tools extract --random-seed=123 --extract-method=regex --bc-pattern=".*" --bc-pattern2="^(?P<umi_1>.{6}).*" \
+                    -I $sample.R1.a3a5trim.fastq.gz --read2-in=$sample.R2.a3a5trim.fastq.gz \
+                    --stdout=$sample.R1.a3a5trim.umi.fastq.gz \
+                    --read2-out=$sample.R2.a3a5trim.umi.fastq.gz \
+                    -L $sample.a3a5trim.umi.log || exit 1
+  NGmerge -1 $sample.R1.a3a5trim.umi.fastq.gz -2 $sample.R2.a3a5trim.umi.fastq.gz -o $sample.stitched.fq -f $sample.nonstitched -s -d -e 20 -z -n $NCPUS -u 45 -g -v || exit 1
+  rm $sample.R1.a5trim.fastq.gz $sample.R2.a3trim.fastq.gz
+  rm $sample.R[12].a3a5trim.fastq.gz
+  $MAP_SH $sample "$REF_DIR" || exit 1
+  echo "Annotating $sample"
+  ( set -o pipefail
+    gzip -dc $GB_DIR/*.gb.gz | $ANNOT_PL outstitch/$sample/$sample.$GENOME_INDEX_NAME.align.sorted.dedup.flt.bam $GENOME_FA_GZ >$sample.annot.txt ) ||
+    { echo "annotPileupRev failed for $sample" >&2; rm -f $sample.annot.txt; exit 1; }
+  rm -f $sample.nonstitched_?.fastq.gz
+done
+
+exit 0
