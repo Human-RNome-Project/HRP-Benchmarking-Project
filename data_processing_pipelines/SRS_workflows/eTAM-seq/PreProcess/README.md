@@ -2,7 +2,7 @@
 
 This directory contains the pre-processing chain that turns raw paired-end eTAM-seq FASTQ files
 into the per-site **annotated pileup tables** (`<sample>.annot.txt`) consumed downstream by the
-R pipeline (`../pipeline.R`).
+R pipeline (`/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/DownstreamProcess/pipeline.R`).
 
 The chain does three things: it cleans and stitches the read pairs (adapters, UMI, overlap
 merging), it maps the stitched reads with **hisat-3n** in A→G three-letter mode and deduplicates
@@ -13,18 +13,20 @@ RefSeq GenBank flat files.
 
 ## Directory Structure
 
-Repository side (`/PreProcess/`):
+Repository side (`/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/PreProcess/`):
 
 - `run`                                # Master driver: loops over the samples, trims, stitches, calls the two other scripts
 - `2_map_and_count_stitched_reads.sh`  # rRNA + genome mapping with hisat-3n, dedup, conversion filter, pileup2var
 - `annotPileupRev`                     # Perl: strand-aware mpileup A/G counting + GenBank annotation
-- `3_make_metadata.sh`                 # Copies the mRNA/IVT `.annot.txt` tables to the layout read by `../pipeline.R`
-- `HRP_B_002_fastq.md5`                # md5 of the 32 input FASTQ files (`md5sum -c`)
+- `samples.tsv`                        # Sample sheet: sample name, group (mRNA/IVT), replicate, FASTQ prefix on the data hub
+- `3_make_metadata.sh`                 # Copies the mRNA/IVT `.annot.txt` tables to the layout read by `/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/DownstreamProcess/pipeline.R`
+- `match_hub_names.sh`                 # Matches the data hub FASTQ (`HRP_B_002_<N>`) with the original ones by read name
+- `Rnome_original_fastq.md5`           # md5 of the 20 original FASTQ files of the 5 released samples
 - `README.md`                          # Contains project documentation
 
 Data side (the working directory where `run` is launched, one level **below** this folder):
 
-- `fq/`                                # Input FASTQ files, `<sample>_L<lane>_R[12]_001.fastq.gz` (flat or one sub-folder per sample)
+- `fq/`                                # Input FASTQ files, `<prefix>_L<lane>_R[12][_001].fastq[.gz]` (flat or one sub-folder per sample)
 - `outstitch/<sample>/`                # BAMs, stats, pileup2var tables (`$hisat3n_out_dir`)
 - `<sample>.annot.txt`                 # Final annotated table, written in the working directory
 - `<sample>.a3a5trim.umi.round[12].log`, `<sample>.a3a5trim.umi.log`  # cutadapt / umi_tools logs
@@ -61,9 +63,10 @@ dataset folder, and falls back to `../annotPileupRev` otherwise (`ANNOT_PL` over
 
 | File | Purpose |
 |------|---------|
-| `run` | Sample loop. Two rounds of `cutadapt`, UMI extraction (`umi_tools extract`), read stitching (`NGmerge`), then calls `2_map_and_count_stitched_reads.sh` and `annotPileupRev`. Skips a sample whose final filtered BAM already exists, and `break`s the whole loop at the first error. |
+| `run` | Sample loop over `samples.tsv`. Two rounds of `cutadapt`, UMI extraction (`umi_tools extract`), read stitching (`NGmerge`), then calls `2_map_and_count_stitched_reads.sh` and `annotPileupRev`. Skips a sample whose final filtered BAM already exists, and stops with exit code 1 at the first error (so that a scheduler sees the failure). |
 | `2_map_and_count_stitched_reads.sh` | Takes one sample name as `$1`. Maps the stitched reads on the rRNA index then on the genome with `hisat-3n --base-change A,G`, keeps uniquely mapped reads (MAPQ ≥ 60), deduplicates on the UMI, filters reads by their A→G conversion rate, and produces the `pileup2var` conversion tables. Deletes the intermediate BAMs at the end. |
-| `3_make_metadata.sh` | `./3_make_metadata.sh <annot_dir> <data_dir>`: copies `Rnome-mRNA-<N>.annot.txt` to `<data_dir>/ETAM_RNA_mrna/metadata/metadata_form_mRNA_<N>.tsv` and `Rnome-IVT-<N>.annot.txt` to `<data_dir>/ETAM_RNA_IVT/metadata/metadata_form_IVT_<N>.tsv`, content unchanged. `Rnome-FTO*` are skipped (not used by `pipeline.R`). |
+| `3_make_metadata.sh` | `./3_make_metadata.sh <annot_dir> <data_dir> [samples.tsv]`: for each line of the sample sheet, copies `<sample>.annot.txt` to `<data_dir>/ETAM_RNA_mrna/metadata/metadata_form_mRNA_<replicate>.tsv` (group `mRNA`) or `<data_dir>/ETAM_RNA_IVT/metadata/metadata_form_IVT_<replicate>.tsv` (group `IVT`), content unchanged. Group and replicate come from the sheet, not from the file names. Exits 1 if a table of the sheet is missing. |
+| `match_hub_names.sh` | `./match_hub_names.sh <original_fq_dir> <hub_fq_dir>`: compares the first read name of every file and prints which `HRP_B_002_<N>` is which original sample. Used to fill the `fastq_prefix` column of `samples.tsv`. |
 | `annotPileupRev` | Reads the GenBank flat files (stdin or `.gb` arguments), builds a per-position annotation of every A of every transcript, then runs two strand-restricted `samtools mpileup` passes on the final BAM and prints one line per covered A site with its A/G counts and annotation. |
 
 ## Requirements & Setup
@@ -120,29 +123,54 @@ hisat-3n indexes (tens of GB with the repeat index).
 
 ### Data Download Instructions
 
-FASTQ files are not in this repository: FASTQ files can be downloaded at the DOE Data Explorer Raw data folder https://doi.org/10.25585/DOE-HRP/3377574. Download the **HRP_B_002** dataset and put its FASTQ
-files in `$FQ_DIR` (`fq/` by default) of the working directory. They can stay flat or in the
-per-sample sub-folders of the download (`ivt1/`, `rna1/`, …): `run` looks two levels deep.
-Check the download with:
+FASTQ files are not in this repository: FASTQ files can be downloaded at the DOE Data Explorer Raw data folder https://doi.org/10.25585/DOE-HRP/3377574. Download the **HRP_B_002** dataset and put its FASTQ files in `$FQ_DIR` (`fq/` by default) of the working directory. They can stay flat or in the per-sample sub-folders of the download (`ivt1/`, `rna1/`, …): `run` looks two levels deep.
+
+The release holds **5 samples, 20 files** (2 lanes, paired-end), named
+`HRP_B_002_<N>_L<lane>_R<read>.fastq` (samples 1 to 3, not compressed) or `.fastq.gz`
+(samples 4 and 5). `run` accepts both, as well as the original sequencer names
+`<sample>_L<lane>_R<read>_001.fastq.gz`; plain files are read with `cat`, gzipped ones with
+`gzip -dc`. No renaming is needed.
+
+#### Sample sheet (`samples.tsv`)
+
+The group of a sample (methylated `mRNA` or unmethylated `IVT` control) is **not** in the hub
+file names, so it comes from `samples.tsv`, read by both `run` and `3_make_metadata.sh`:
+
+| `sample` (output name) | `group` | `replicate` | `fastq_prefix` (data hub) |
+|------------------------|---------|-------------|---------------------------|
+| `Rnome-mRNA-1` | mRNA (methylated) | 1 | `HRP_B_002_?` |
+| `Rnome-mRNA-2` | mRNA (methylated) | 2 | `HRP_B_002_?` |
+| `Rnome-mRNA-3` | mRNA (methylated) | 3 | `HRP_B_002_?` |
+| `Rnome-IVT-1`  | IVT (unmethylated control) | 1 | `HRP_B_002_?` |
+| `Rnome-IVT-3`  | IVT (unmethylated control) | 3 | `HRP_B_002_?` |
+
+There is no `IVT-2`. For each sample, `run` looks for `<fastq_prefix>_L*_R[12]…` and, when the
+prefix is `NA` or matches nothing, for `<sample>_L*_R[12]…` (original names). All output files
+are named after the `sample` column, whatever the input names.
+
+The `fastq_prefix` column is checked with `match_hub_names.sh`, which compares the first read
+name of each hub file with the original files (an Illumina read name is unique to one read):
 
 ```bash
-cd fq && find . -name '*.fastq.gz' -exec md5sum {} + | sed 's#  .*/#  #' | sort -k2 | diff - ../HRP_B_002_fastq.md5
+./match_hub_names.sh /path/to/original_fq fq/
 ```
 
-(no output = all 32 files present and intact; ≈ 107 GB in total). 8 samples, 2 lanes, paired-end:
+Check the original files with (every line must end with `OK`):
 
-| Sample (`SAMPLES`) | Group | Files |
-|--------------------|-------|-------|
-| `Rnome-mRNA-1`, `Rnome-mRNA-2`, `Rnome-mRNA-3` | mRNA (methylated) | `<sample>_L1_R1_001.fastq.gz`, `<sample>_L1_R2_001.fastq.gz`, `<sample>_L2_R1_001.fastq.gz`, `<sample>_L2_R2_001.fastq.gz` |
-| `Rnome-IVT-1`, `Rnome-IVT-3` | IVT (unmethylated control; there is no `IVT-2`) | same pattern |
-| `Rnome-FTO1`, `Rnome-FTO2`, `Rnome-FTO3` | FTO-treated | same pattern |
+```bash
+cd /path/to/original_fq && md5sum -c /path/to/PreProcess/Rnome_original_fastq.md5
+```
+
+The hub files have other names, and samples 1 to 3 are uncompressed, so these md5 do not apply
+to them; use the checksums given by the data hub.
 
 The reference files come from `$REF_DIR` — download from the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder.
 
 | Input File | Description | File Type/Format | Script Usage |
 |------------|-------------|------------------|--------------|
-| `$FQ_DIR/[<subdir>/]<sample>_L<lane>_R1_001.fastq.gz` | Read 1 of every lane of the sample | gzipped FASTQ | `run` (lanes concatenated on the fly with `gzip -dc`) |
-| `$FQ_DIR/[<subdir>/]<sample>_L<lane>_R2_001.fastq.gz` | Read 2 (carries the 6 nt UMI at its 5′ end) | gzipped FASTQ | `run` |
+| `samples.tsv` | Sample, group, replicate, FASTQ prefix | TSV | `run`, `3_make_metadata.sh` |
+| `$FQ_DIR/[<subdir>/]<prefix>_L<lane>_R1[_001].fastq[.gz]` | Read 1 of every lane of the sample | FASTQ, plain or gzipped | `run` (lanes concatenated on the fly) |
+| `$FQ_DIR/[<subdir>/]<prefix>_L<lane>_R2[_001].fastq[.gz]` | Read 2 (carries the 6 nt UMI at its 5′ end) | FASTQ, plain or gzipped | `run` |
 | `$REF_DIR/HS_rep/hs_rrna*` | hisat-3n rRNA index | hisat-3n index | `2_map_…sh`, rRNA depletion pass |
 | `$REF_DIR/hs_rrna.fa` | rRNA sequences | FASTA | `samtools stats`, `pileup2var` |
 | `$REF_DIR/HS_rep/b38*` | hisat-3n genome index (GRCh38) | hisat-3n index | `2_map_…sh`, genome pass |
@@ -178,7 +206,8 @@ Variables of `run` (all `${VAR:-default}`, so any of them can be exported before
 | `GB_DIR` | `$REF_DIR/GB` | Folder of the `*.gb.gz` GenBank records |
 | `GENOME_INDEX_NAME` | `b38` | Index name, also part of every output file name |
 | `FQ_DIR` | `fq` | Input FASTQ folder (files searched two levels deep) |
-| `SAMPLES` | the 8 HRP_B_002 samples (`Rnome-FTO1` … `Rnome-mRNA-3`) | Space-separated sample list = FASTQ prefixes |
+| `SAMPLE_SHEET` | `samples.tsv` next to `run` | Sample sheet (sample, group, replicate, FASTQ prefix) |
+| `SAMPLES` | empty = every sample of the sheet | Optional subset: space-separated values of the `sample` column |
 | `NCPUS` | `24` | Threads (NGmerge here, mapping/sorting downstream) |
 | `MAP_SH` | `./2_map_and_count_stitched_reads.sh` | Mapping script |
 | `ANNOT_PL` | `./annotPileupRev` if executable, else `../annotPileupRev` | Annotation script |
@@ -206,7 +235,7 @@ In `run`:
 
 | Parameter | Example | Meaning |
 |-----------|---------|---------|
-| `SAMPLES` | `Rnome-FTO1 … Rnome-mRNA-3` | List of the samples to process |
+| `SAMPLE_SHEET`, `SAMPLES` | `samples.tsv`, all | Samples to process (see *Sample sheet*) |
 | `-g` / `-A` (round 1) | `GACGCTCTTCCGATCT` / `AGATCGGAAGAGCGTC` | 5′ adapter of R1 and 3′ adapter of R2 |
 | `-a` / `-G` (round 2) | `NNNNNNAGATCGGAAGAGCACA` / `TGTGCTCTTCCGATCT` | 3′ adapter of R1 (preceded by the 6 nt UMI) and 5′ adapter of R2 |
 | `-q 6`, `-m 0:46` | — | Quality trimming, and minimum length 0 for R1 / 46 for R2 |
@@ -233,8 +262,7 @@ passes it) or from `GENOME_FA_GZ`. The minimum coverage to print a site (`nbA + 
 the 7 nt window of the `context` column are hardcoded.
 
 ### Reference data: where to get it
-
-These can be found can be downloaded at the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder. 
+These can be found can be downloaded at the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder.
 
 `REF_DIR` must hold the files below. The two that cannot be regenerated quickly:
 
@@ -288,7 +316,12 @@ For another organism, point `REF_DIR` at a folder with the same five entries and
 
 ### References/Accessory files
 
-These can be found can be downloaded at the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder. Annotation comes from the RefSeq GenBank records, not from a GTF. Only the records whose `DEFINITION` line matches `… chromosome <name>[.,]` are processed: **unplaced scaffolds and records without that wording are silently skipped**. The features used are `CDS`, `mRNA`, `misc_RNA`, `ncRNA`, `precursor_RNA`, `rRNA` and `tRNA`; `CDS` takes precedence over the others for a position annotated twice, and features described with `order(...)`, or with a `complement(...)` inside a `join(...)`, are skipped.
+These can be found can be downloaded at the DOE Data Explorer https://doi.org/10.25585/DOE-HRP/3377574 Raw data References folder. Annotation comes from the RefSeq GenBank records, not from a GTF. Only the records whose
+`DEFINITION` line matches `… chromosome <name>[.,]` are processed: **unplaced scaffolds and
+records without that wording are silently skipped**. The features used are `CDS`, `mRNA`,
+`misc_RNA`, `ncRNA`, `precursor_RNA`, `rRNA` and `tRNA`; `CDS` takes precedence over the others
+for a position annotated twice, and features described with `order(...)`, or with a
+`complement(...)` inside a `join(...)`, are skipped.
 
 ## Usage/Step-wise Execution
 
@@ -299,23 +332,23 @@ Everything is launched from the dataset folder, which holds `run`,
 ```bash
 mkdir -p /path/to/work/dataset
 cp Rnome/PreProcess/annotPileupRev /path/to/work/
-cp Rnome/PreProcess/{run,2_map_and_count_stitched_reads.sh,3_make_metadata.sh,HRP_B_002_fastq.md5} /path/to/work/dataset/
+cp Rnome/PreProcess/{run,2_map_and_count_stitched_reads.sh,3_make_metadata.sh,samples.tsv} /path/to/work/dataset/
 cd /path/to/work/dataset      # then put the HRP_B_002 FASTQ files in fq/
 chmod +x run 2_map_and_count_stitched_reads.sh 3_make_metadata.sh ../annotPileupRev
 
-./run /path/to/b38                                        # all 8 samples
+./run /path/to/b38                                        # the 5 samples of samples.tsv
 REF_DIR=/path/to/b38 SAMPLES="Rnome-mRNA-1 Rnome-IVT-1" ./run   # subset of the samples
 
 ./3_make_metadata.sh . /path/to/data_dir                  # hand-off to the R pipeline
-Rscript ../pipeline.R /path/to/data_dir
+Rscript /path/to/DownstreamProcess/pipeline.R /path/to/data_dir
 ```
 
 The first line of the log recalls which reference folder is in use; if a file is missing there,
 both scripts stop immediately and name it.
 
 **Step 0: Checks** — `REF_DIR` given, reference files present, tools on the `PATH` (warning if
-`cutadapt` ≠ 4.6 or `samtools` ≠ 1.17); for each sample, at least one R1 file and as many R2
-as R1 files, otherwise the loop stops.
+`cutadapt` ≠ 4.6 or `samtools` ≠ 1.17), sample sheet readable and `SAMPLES` all in it; for each
+sample, at least one R1 file and as many R2 as R1 files, otherwise `run` stops with exit code 1.
 
 **Step 1: Adapter trimming, round 1** — `cutadapt` removes the 5′ adapter of R1 (`-g`) and the
 3′ adapter of R2 (`-A`), quality-trims at Q6 and requires R2 ≥ 46 nt. All the lanes of the
@@ -364,8 +397,8 @@ appearing on the unexpected strand makes the script `die`, which is an intention
 Sites with `nbA + nbG < 10` are not printed.
 
 **Step 10: Hand-off to the R pipeline** — `./3_make_metadata.sh . /path/to/data_dir` copies the
-mRNA and IVT tables under the names read by `../pipeline.R`, then
-`Rscript ../pipeline.R /path/to/data_dir`. The files are identical to the `.annot.txt`; R reads
+mRNA and IVT tables under the names read by `pipeline.R` (group and replicate from
+`samples.tsv`), then `Rscript /HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/DownstreamProcess/pipeline.R /path/to/data_dir`. The files are identical to the `.annot.txt`; R reads
 the `nbA+G` column as `nbA.G`.
 
 ## Outputs
@@ -382,7 +415,7 @@ the `nbA+G` column as `nbA.G`.
 | `<sample>.a3a5trim.umi.round1.log` / `.round2.log` | Text | `run` | cutadapt reports |
 | `<sample>.a3a5trim.umi.log` | Text | `run` | `umi_tools extract` report |
 | `<sample>.stitched.fq.gz` | gzipped FASTQ | `run` | Stitched reads given to the mapper |
-| `<data_dir>/ETAM_RNA_{mrna,IVT}/metadata/metadata_form_<group>_<N>.tsv` | TSV with header | `3_make_metadata.sh` | Copies of the mRNA / IVT `.annot.txt`, input of `../pipeline.R` |
+| `<data_dir>/ETAM_RNA_{mrna,IVT}/metadata/metadata_form_<group>_<N>.tsv` | TSV with header | `3_make_metadata.sh` | Copies of the mRNA / IVT `.annot.txt`, input of `/HRP-Benchmarking-Project/data_processing_pipelines/SRS_workflows/eTAM-seq/DownstreamProcess/pipeline.R` |
 
 Columns of `<sample>.annot.txt`:
 
@@ -402,5 +435,3 @@ Columns of `<sample>.annot.txt`:
 
 These are exactly the columns expected by the downstream R pipelines (`chr`, `pos`, `nt`,
 `context`, `nbA`, `nbG`, `nbA.G`, `kind`, `gene`).
-`context`, `nbA`, `nbG`, `nbA.G`, `kind`, `gene`).
-
